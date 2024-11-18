@@ -1,0 +1,33 @@
+{
+    "manifest_version": 3,
+    "name": "Trade Call Widget",
+    "version": "1.0.0",
+    "description": "A widget for creating and managing trade calls",
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "assets/icons/icon.png",
+        "48": "assets/icons/icon.png",
+        "128": "assets/icons/icon.png"
+      }
+    },
+    "permissions": [
+      "storage",
+      "clipboardWrite"
+    ],
+    "web_accessible_resources": [{
+      "resources": ["dist/popup.css"],
+      "matches": ["<all_urls>"]
+    }],
+    "icons": {
+      "16": "assets/icons/icon.png",
+      "48": "assets/icons/icon.png",
+      "128": "assets/icons/icon.png"
+    },
+    "background": {
+      "service_worker": "background.js",
+      "type": "module"
+    },
+    "author": "Your Name",
+    "homepage_url": "https://your-website.com"
+  }
