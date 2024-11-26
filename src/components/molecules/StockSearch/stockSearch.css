@@ -1,0 +1,57 @@
+/* Base styles */
+.stock-search-container {
+    position: relative;
+    width: 100%;
+  }
+  
+  /* Message animations */
+  .hint-message {
+    position: relative;
+    height: 24px;
+    overflow: hidden;
+  }
+  
+  .hint-text {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .hint-text-enter {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  
+  .hint-text-enter-active {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  .hint-text-exit {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  .hint-text-exit-active {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  
+  /* Stock list animations */
+  .stock-item {
+    transition: background-color 0.15s ease;
+  }
+  
+  .stock-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .stock-item.selected {
+    background-color: rgba(0, 0, 0, 0.075);
+  }
+  
+  /* Smooth scrolling */
+  .stock-list {
+    scroll-behavior: smooth;
+  }
