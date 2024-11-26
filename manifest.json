@@ -16,7 +16,8 @@
   "permissions": [
       "storage",
       "clipboardWrite",
-      "sidePanel"
+      "sidePanel",
+      "identity"
   ],
   "web_accessible_resources": [{
       "resources": ["dist/popup.css"],

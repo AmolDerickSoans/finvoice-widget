@@ -3,11 +3,12 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const ExtReloader = require('webpack-ext-reloader');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
   mode: process.env.NODE_ENV || 'development',
   entry: {
-    popup: ['./styles/tailwind.css', './popup/popup.js'],
+    popup: ['./styles/tailwind.css', './public/popup/popup.js'],
     background: './background/background.js'
   },
   output: {
@@ -54,8 +55,9 @@ module.exports = {
     }
   },
   plugins: [
+    new Dotenv(),
     new HtmlWebpackPlugin({
-      template: './popup/index.html',
+      template: './public/popup/index.html',
       filename: 'popup.html',
       chunks: ['popup']
     }),

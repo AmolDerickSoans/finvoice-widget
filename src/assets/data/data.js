@@ -1,82 +1,149 @@
-export const trades = [
+const trades = [
     {
-        id: 4,
+        type: "SELL",
         symbol: "HDFC",
-        type: "SELL",
         category: "EQUITY",
         tradeType: "INTRADAY",
-        timestamp: "24 Oct 2024 11:15:45 AM"
+        date: "24 Oct 2024",
+        time: "11:15:45 AM"
     },
     {
-        id: 5,
+        type: "BUY",
         symbol: "TCS",
-        type: "BUY",
         category: "EQUITY",
         tradeType: "POSITIONAL",
-        timestamp: "24 Oct 2024 11:30:22 AM"
+        date: "24 Oct 2024",
+        time: "11:30:22 AM"
     },
     {
-        id: 6,
+        type: "SELL",
         symbol: "ICICI",
-        type: "SELL",
         category: "EQUITY",
         tradeType: "SWING",
-        timestamp: "24 Oct 2024 12:05:10 PM"
+        date: "24 Oct 2024",
+        time: "12:05:10 PM"
     },
     {
-        id: 7,
+        type: "BUY",
         symbol: "BHARTIARTL",
-        type: "BUY",
         category: "EQUITY",
         tradeType: "INTRADAY",
-        timestamp: "24 Oct 2024 12:45:33 PM"
+        date: "24 Oct 2024",
+        time: "12:45:33 PM"
     },
     {
-        id: 8,
+        type: "SELL",
         symbol: "WIPRO",
-        type: "SELL",
         category: "EQUITY",
         tradeType: "POSITIONAL",
-        timestamp: "24 Oct 2024 01:20:15 PM"
+        date: "24 Oct 2024",
+        time: "01:20:15 PM"
     },
     {
-        id: 9,
+        type: "BUY",
         symbol: "HCLTECH",
-        type: "BUY",
         category: "EQUITY",
         tradeType: "SWING",
-        timestamp: "24 Oct 2024 01:55:40 PM"
+        date: "24 Oct 2024",
+        time: "01:55:40 PM"
     },
     {
-        id: 10,
-        symbol: "SBIN",
         type: "SELL",
+        symbol: "SBIN",
         category: "EQUITY",
         tradeType: "INTRADAY",
-        timestamp: "24 Oct 2024 02:10:05 PM"
+        date: "24 Oct 2024",
+        time: "02:10:05 PM"
     },
     {
-        id: 11,
-        symbol: "INFY",
         type: "BUY",
+        symbol: "INFY",
         category: "EQUITY",
         tradeType: "POSITIONAL",
-        timestamp: "24 Oct 2024 02:30:18 PM"
+        date: "24 Oct 2024",
+        time: "02:30:18 PM"
     },
     {
-        id: 12,
-        symbol: "LT",
         type: "SELL",
+        symbol: "LT",
         category: "EQUITY",
         tradeType: "SWING",
-        timestamp: "24 Oct 2024 02:45:50 PM"
+        date: "24 Oct 2024",
+        time: "02:45:50 PM"
     },
     {
-        id: 13,
-        symbol: "MARUTI",
         type: "BUY",
+        symbol: "MARUTI",
         category: "EQUITY",
         tradeType: "INTRADAY",
-        timestamp: "24 Oct 2024 03:15:25 PM"
+        date: "24 Oct 2024",
+        time: "03:15:25 PM"
+    },
+    {
+        type: "SELL",
+        symbol: "LT",
+        category: "EQUITY",
+        tradeType: "SWING",
+        date: "24 Oct 2024",
+        time: "02:45:50 PM"
+    },
+    {
+        type: "BUY",
+        symbol: "MARUTI",
+        category: "EQUITY",
+        tradeType: "INTRADAY",
+        date: "24 Oct 2024",
+        time: "03:15:25 PM"
+    },
+    {
+        type: "SELL",
+        symbol: "LT",
+        category: "EQUITY",
+        tradeType: "SWING",
+        date: "24 Oct 2024",
+        time: "02:45:50 PM"
+    },
+    {
+        type: "BUY",
+        symbol: "MARUTI",
+        category: "EQUITY",
+        tradeType: "INTRADAY",
+        date: "24 Oct 2024",
+        time: "03:15:25 PM"
+    },
+    {
+        type: "SELL",
+        symbol: "LT",
+        category: "EQUITY",
+        tradeType: "SWING",
+        date: "24 Oct 2024",
+        time: "02:45:50 PM"
+    },
+    {
+        type: "BUY",
+        symbol: "MARUTI",
+        category: "EQUITY",
+        tradeType: "INTRADAY",
+        date: "24 Oct 2024",
+        time: "03:15:25 PM"
+    },
+    {
+        type: "SELL",
+        symbol: "LT",
+        category: "EQUITY",
+        tradeType: "SWING",
+        date: "24 Oct 2024",
+        time: "02:45:50 PM"
+    },
+    {
+        type: "BUY",
+        symbol: "MARUTI",
+        category: "EQUITY",
+        tradeType: "INTRADAY",
+        date: "24 Oct 2024",
+        time: "03:15:25 PM"
     }
 ]
+
+
+export { trades }
