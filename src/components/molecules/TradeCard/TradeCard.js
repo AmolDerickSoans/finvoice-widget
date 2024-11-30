@@ -22,10 +22,10 @@ const TradeCard = ({ type, symbol, category, tradeType, date, time }) => {
                 }`}>
                   {type}
                 </span>
+                <h3 class="font-medium text-sm text-gray-900">{symbol}</h3>
               </div>
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="font-medium text-gray-900">{symbol}</h3>
                   <div className="flex space-x-2 mt-1">
                     <span className="px-2 py-1 bg-gray-100 rounded text-xs">{category}</span>
                     <span className="px-2 py-1 bg-gray-100 rounded text-xs">{tradeType}</span>
