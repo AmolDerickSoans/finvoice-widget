@@ -46,7 +46,7 @@ const style = `
 
 const NewTradeCallModal = ({ isOpen, onClose }) => {
     // Keep existing state management
-    const [type, setType] = useState('buy');
+    const [type, setType] = useState('Buy');
     const [stockSearch, setStockSearch] = useState('');
     const [selectedStock, setSelectedStock] = useState(null);
     const [price, setPrice] = useState('');
@@ -54,7 +54,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
     const [price2, setPrice2] = useState('');
     const [stopLoss, setStopLoss] = useState('');
     const [target, setTarget] = useState('');
-    const [currentFocus, setCurrentFocus] = useState(null);
+    const [currentFocus, setCurrentFocus] = useState('type');
     const [showStockSearch, setShowStockSearch] = useState(false);
     const [selectedSearchIndex, setSelectedSearchIndex] = useState(-1);
     const [target2Visible, setTarget2Visible] = useState(false);
@@ -87,7 +87,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
 
 
     const totalFields = 4;
-    const validFields = [selectedStock, price, stopLoss, target].filter(Boolean).length;
+    const validFields = [stockSearch, price, stopLoss, target].filter(Boolean).length;
 
 
     const [isSearchAnimating, setIsSearchAnimating] = useState(false);
@@ -251,7 +251,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
             case 'type':
                 switch (e.key) {
                     case 'Enter':
-                        setType(prev => prev === 'buy' ? 'sell' : 'buy');
+                        setType(prev => prev === 'Buy' ? 'Sell' : 'Buy');
                         break;
                     case 'ArrowRight':
                         setCurrentFocus('stockSearch');
@@ -440,7 +440,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
     };
 
     const resetForm = () => {
-        setType('buy');
+        setType('Buy');
         setStockSearch('');
         setSelectedStock(null);
         setPrice('');
@@ -451,18 +451,41 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
         setSelectedSearchIndex(-1);
         setPrice2('');
         setPrice2Visible(false);
+        setTarget2('');
+        setTarget3('');
+        setTarget2Visible(false);
+        setTarget3Visible(false);
     };
 
 
     const handleSubmit = () => {
         console.log('Form submitted with the following data:', {
             type,
+            stockSearch,
             selectedStock,
             price,
+            price2,
             stopLoss,
             target,
+            target2,
+            target3,
         });
+
+        copyToClipboard(type,stockSearch,price,stopLoss,target,price2,target2,target3);
     };
+
+    const copyToClipboard = (type,stockSearch, price,stoploss, target,price2 ='', target2 ='', target3 ='') => {
+        const textToCopy = `${type} ${stockSearch} at ₹${price}${price2 ? ' and ₹' + price2 : ''}. Set Stoploss at ₹${stoploss}. Target for ₹${target}${target2!='' ? ', ₹' + target2 : ''}${target3!='' ? ' and ₹' + target3 : ''}.`;
+        console.log(textToCopy)
+        navigator.clipboard.writeText(textToCopy)
+            .then(() => {
+                console.log('Text copied to clipboard');
+            })
+            .catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+    }
+        ;
 
     if (!isOpen) return null;
 
@@ -481,13 +504,14 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                     {/* First row */}
                     <div class="flex items-center space-x-2">
                         <span
-                            class={`font-medium ${type === 'buy' ? 'text-green-600' : 'text-red-600'} cursor-pointer`}
+                            class={` p-3 font-medium ${type === 'Buy' ? 'text-green-600' : 'text-red-600'} cursor-pointer`}
                             ref={inputRefs.type}
                             tabIndex={0}
                             onKeyDown={handleKeyDown}
-                            onClick={() => setType(prev => prev === 'buy' ? 'sell' : 'buy')}
+                            onFocus={handleFocus}
+                            onClick={() => setType(prev => prev === 'Buy' ? 'Sell' : 'Buy')}
                         >
-                            {type === 'buy' ? 'Buy' : 'Sell'}
+                            {type === 'Buy' ? 'Buy' : 'Sell'}
                         </span>
                         <div class="relative flex-1 ">
                             <input
@@ -500,7 +524,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 }}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Search stocks..."
-                                class={`w-full px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'} overflow-hidden whitespace-nowrap text-ellipsis`}
+                                class={`w-full px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'} overflow-hidden whitespace-nowrap text-ellipsis`}
                             />
                         </div>
                         <span>at</span>
@@ -510,7 +534,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                             onChange={(e) => setPrice(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder="₹"
-                            class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                            class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
                                 }`}
                             type="number"
                             min="0"
@@ -524,7 +548,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                     onChange={(e) => setPrice2(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder="₹"
-                                    class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                                    class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
                                         }`}
                                     type="number"
                                     min="0"
@@ -572,7 +596,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 onFocus={() => setCurrentFocus('stopLoss')}
                                 onKeyDown={handleKeyDown}
                                 placeholder="₹"
-                                class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
+                                class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
                                 type="number"
                                 min="0"
 
@@ -588,7 +612,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 onFocus={() => setCurrentFocus('target')}
                                 onKeyDown={handleKeyDown}
                                 placeholder="₹"
-                                class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
+                                class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
                                 type="number"
                                 min="0"
 
@@ -602,7 +626,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 onChange={(e) => setTarget(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 placeholder="₹"
-                                class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                                class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
                                     }`}
                                 type="number"
                                 min="0"
@@ -616,7 +640,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                         onChange={(e) => setTarget2(e.target.value)}
                                         onKeyDown={handleKeyDown}
                                         placeholder="₹"
-                                        class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                                        class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
                                             }`}
                                         type="number"
                                         min="0"
@@ -632,7 +656,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                         onChange={(e) => setTarget3(e.target.value)}
                                         onKeyDown={handleKeyDown}
                                         placeholder="₹"
-                                        class={`w-16 px-1 py-2 mt-3 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                                        class={`w-16 px-1 py-2 mt-3 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
                                             }`}
                                         type="number"
                                         min="0"
