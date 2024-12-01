@@ -57,7 +57,6 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
     const [selectedSearchIndex, setSelectedSearchIndex] = useState(-1);
     //const [exactMatch , setExactMatch] = useState(false);
 
-    // Mock stock data
     const mockStocks = [
         { stockName: 'Reliance Industries Ltd', tickerSymbol: 'RELIANCE' },
         { stockName: 'Relic Technologies Ltd', tickerSymbol: 'RELICTEC' },
@@ -67,13 +66,16 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
 
     const [filteredStocks, setFilteredStocks] = useState([]);
 
-    // Keep existing refs and calculations
     const inputRefs = {
-        type: useRef(null),
-        stock: useRef(null),
-        price: useRef(null),
-        stopLoss: useRef(null),
-        target: useRef(null),
+            type: useRef(null),
+            stock: useRef(null),
+            price: useRef(null),
+            price2: useRef(null),
+            stopLoss: useRef(null),
+            target: useRef(null),
+            target2: useRef(null),
+            target3: useRef(null),
+            copyButton: useRef(null)
     };
 
 
@@ -125,7 +127,38 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
             setFilteredStocks([]);
         }
     }, [stockSearch]);
-
+    useEffect(() => {
+        switch (currentFocus) {
+          case 'type':
+            inputRefs.type.current?.focus();
+            break;
+          case 'stockSearch':
+            inputRefs.stock.current?.focus();
+            break;
+          case 'price':
+            inputRefs.price.current?.focus();
+            break;
+          case 'price2':
+            inputRefs.price2.current?.focus();
+            break;
+          case 'stopLoss':
+            inputRefs.stopLoss.current?.focus();
+            break;
+          case 'target':
+            inputRefs.target.current?.focus();
+            break;
+          case 'target2':
+            inputRefs.target2.current?.focus();
+            break;
+          case 'target3':
+            inputRefs.target3.current?.focus();
+            break;
+          case 'copy':
+            inputRefs.copyButton.current?.focus();
+            break;
+        }
+      }, [currentFocus]);
+    
 
     const matchingStock = useMemo(() => {
         if (!stockSearch) return null;
@@ -153,7 +186,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
         } else if (stockSearch.length >= 3) {
             setShowSearch(true);
         }
-        onFocus?.(e);
+       
     };
 
     const handleChange = (e) => {
@@ -169,43 +202,131 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
         }
     };
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && currentFocus === 'type') {
-            setType(prev => prev === 'buy' ? 'sell' : 'buy');
+    // First, change the handleKeyDown function to:
+const handleKeyDown = (e) => {
+    // Prevent default behavior for arrow keys to avoid unwanted scrolling
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+    }
+
+    // Helper function to check if a field should be hidden
+    const shouldHideField = (value) => !value || value.trim() === '';
+
+    if (showStockSearch && filteredStocks.length > 0) {
+        switch (e.key) {
+            case 'ArrowDown':
+                setSelectedSearchIndex(prev =>
+                    prev < filteredStocks.length - 1 ? prev + 1 : 0
+                );
+                return;
+            case 'ArrowUp':
+                setSelectedSearchIndex(prev =>
+                    prev > 0 ? prev - 1 : filteredStocks.length - 1
+                );
+                return;
+            case 'Enter':
+                if (selectedSearchIndex >= 0) {
+                    const selected = filteredStocks[selectedSearchIndex];
+                    setSelectedStock(selected);
+                    setStockSearch(selected.tickerSymbol);
+                    setShowStockSearch(false);
+                    setCurrentFocus('price');
+                    return;
+                }
+                break;
+            case 'Escape':
+                setShowStockSearch(false);
+                inputRefs.stock.current?.blur();
+                return;
         }
-        else {
-            if (showStockSearch && filteredStocks.length > 0) {
+    }
+
+    switch (currentFocus) {
+        case 'type':
+            switch (e.key) {
+                case 'Enter':
+                    setType(prev => prev === 'buy' ? 'sell' : 'buy');
+                    break;
+                case 'ArrowRight':
+                    setCurrentFocus('stockSearch');
+                    break;
+                case 'ArrowDown':
+                    setCurrentFocus('stopLoss');
+                    break;
+            }
+            break;
+
+        case 'stockSearch':
+            if (!showStockSearch) {
                 switch (e.key) {
+                    case 'ArrowLeft':
+                        setCurrentFocus('type');
+                        break;
+                    case 'ArrowRight':
+                        setCurrentFocus('price');
+                        break;
                     case 'ArrowDown':
-                        e.preventDefault();
-                        setSelectedSearchIndex(prev =>
-                            prev < filteredStocks.length - 1 ? prev + 1 : 0
-                        );
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        setSelectedSearchIndex(prev =>
-                            prev > 0 ? prev - 1 : filteredStocks.length - 1
-                        );
-                        break;
-                    case 'Enter':
-                        if (selectedSearchIndex >= 0) {
-                            e.preventDefault();
-                            const selected = filteredStocks[selectedSearchIndex];
-                            setSelectedStock(selected);
-                            setStockSearch(selected.tickerSymbol);
-                            setShowStockSearch(false);
-                            inputRefs.price.current?.focus();
-                        }
-                        break;
-                    case 'Escape':
-                        setShowStockSearch(false);
-                        inputRefs.stock.current?.blur();
+                        setCurrentFocus('stopLoss');
                         break;
                 }
             }
-        }
-    };
+            break;
+
+        case 'price':
+            switch (e.key) {
+                case 'ArrowLeft':
+                    setCurrentFocus('stockSearch');
+                    break;
+                case 'ArrowRight':
+                    setCurrentFocus('stopLoss');
+                    break;
+                case 'ArrowDown':
+                    setCurrentFocus('stopLoss');
+                    break;
+            }
+            break;
+
+        case 'stopLoss':
+            switch (e.key) {
+                case 'Enter':
+                case 'ArrowDown':
+                    setCurrentFocus('target');
+                    break;
+                case 'ArrowUp':
+                    setCurrentFocus('price');
+                    break;
+                case 'ArrowLeft':
+                    setCurrentFocus('price');
+                    break;
+                case 'ArrowRight':
+                    setCurrentFocus('target');
+                    break;
+            }
+            break;
+
+        case 'target':
+            switch (e.key) {
+                case 'ArrowLeft':
+                    setCurrentFocus('stopLoss');
+                    break;
+                case 'ArrowUp':
+                    setCurrentFocus('stopLoss');
+                    break;
+                case 'ArrowDown':
+                    if (validFields === totalFields) {
+                        setCurrentFocus('copy');
+                    }
+                    break;
+            }
+            break;
+
+        case 'copy':
+            if (e.key === 'ArrowUp') {
+                setCurrentFocus('target');
+            }
+            break;
+    }
+};
 
     const resetForm = () => {
         setType('buy');
@@ -279,9 +400,10 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                             onFocus={() => setCurrentFocus('price')}
                             placeholder="₹"
                             class={`w-24 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
+                            onKeyDown={handleKeyDown}
                             type="number"
                             min="0"
-                            step="0.01"
+                            
                         />
                     </div>
                 </div>
@@ -322,11 +444,12 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 value={stopLoss}
                                 onChange={(e) => setStopLoss(e.target.value)}
                                 onFocus={() => setCurrentFocus('stopLoss')}
+                                onKeyDown={handleKeyDown}
                                 placeholder="₹"
                                 class={`w-24 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
                                 type="number"
                                 min="0"
-                                step="0.01"
+                                
                             />
                         </div>
 
@@ -337,11 +460,12 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 value={target}
                                 onChange={(e) => setTarget(e.target.value)}
                                 onFocus={() => setCurrentFocus('target')}
+                                onKeyDown={handleKeyDown}
                                 placeholder="₹"
                                 class={`w-24 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
                                 type="number"
                                 min="0"
-                                step="0.01"
+                                
                             />
                         </div>
                     </Fragment>
