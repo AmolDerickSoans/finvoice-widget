@@ -1,4 +1,5 @@
-import { NseIndia } from 'stock-nse-india';
+//import { NseIndia } from 'stock-nse-india';
+import { createClient } from '@supabase/supabase-js'
 //const nseIndia = new NseIndia();
 // Constants
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -9,12 +10,44 @@ const CACHE_CONFIG = {
   version: '1.0',
   maxItems: 500 // Limit cache size
 };
-
+const supabase = createClient(
+  'YOUR_SUPABASE_URL',
+  'YOUR_SUPABASE_ANON_KEY'
+)
 // Initialize extension
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('Trade Call Widget installed/updated');
   await initializeCache();
   await cacheAllStockSymbols(); // Cache stock symbols on installation
+  await checkAuth();
+});
+
+// Check auth state when extension opens
+chrome.runtime.onStartup.addListener(async() => {
+ await checkAuth();
+});
+
+async function checkAuth() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error || !session) {
+    // If not authenticated, open auth popup
+    chrome.windows.create({
+      url: 'auth.html',
+      type: 'popup',
+      width: 400,
+      height: 600
+    });
+  }
+}
+
+// Listen for messages from auth popup
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (message.type === 'AUTH_SUCCESS') {
+    // Close auth window and refresh main extension
+    chrome.windows.remove(sender.tab.windowId);
+    chrome.runtime.reload();
+  }
 });
 
 // Function to cache all stock symbols

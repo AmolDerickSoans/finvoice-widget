@@ -1,58 +1,71 @@
+import { useState } from 'preact/hooks';
 import { h } from 'preact';
-import { Button } from '../../atoms/Button/Button.js';
-import { Badge } from '../../atoms/Badge/Badge.js';
-import { Card } from '../../atoms/Card/Card.js';
-import { ArrowUpRight, Pencil } from 'lucide-react';
+import { Edit2, Share, ChevronRight } from 'lucide-react';
 
-export const TradeCard = ({ trade }) => (
-  <Card class="p-4 group relative hover:shadow-md transition-shadow">
-    <div class="flex items-start justify-between">
-      <div class="space-y-4">
-        <div class="space-y-2">
-          <div class="flex items-center gap-2">
-            <Badge
-              variant="secondary"
-              class="bg-[#ECFDF3] text-[#027A48] hover:bg-[#ECFDF3] px-2 py-0.5 text-xs font-medium"
-            >
-              {trade.type}
-            </Badge>
-            <span class="font-medium">{trade.symbol}</span>
+
+const TradeCard = ({ type, symbol, category, tradeType, date, time }) => {
+    const [isHovered, setIsHovered] = useState(false);
+  
+    return (
+      <div 
+        className="bg-white rounded-lg shadow-sm mb-3 relative transition-all duration-200 ease-in-out"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Main Card Content */}
+        <div className="p-4">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="flex items-center space-x-2 mb-2">
+                <span className={`px-2 py-1 rounded text-xs ${
+                  type === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {type}
+                </span>
+                <h3 class="font-medium text-sm text-gray-900">{symbol}</h3>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="flex space-x-2 mt-1">
+                    <span className="px-2 py-1 bg-gray-100 rounded text-xs">{category}</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded text-xs">{tradeType}</span>
+                  </div>
+                </div>
+                <div className="text-right text-sm text-gray-500">
+                  <div>{date}</div>
+                  <div>{time}</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right Arrow */}
+            <div className="ml-2">
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <Badge
-              variant="secondary"
-              class="bg-gray-100 text-gray-700 hover:bg-gray-100"
-            >
-              {trade.category}
-            </Badge>
-            <Badge
-              variant="secondary"
-              class="bg-gray-100 text-gray-700 hover:bg-gray-100"
-            >
-              {trade.tradeType}
-            </Badge>
+        </div>
+  
+        {/* Expandable Action Buttons Section */}
+        <div 
+          className={`
+            border-t border-gray-100
+            transition-all duration-200 ease-in-out
+            ${isHovered ? 'h-12 opacity-100' : 'h-0 opacity-0 overflow-hidden'}
+          `}
+        >
+          <div className="flex justify-between items-center px-4">
+            <div className="flex space-x-2 py-2">
+              <button className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+                <Edit2 className="h-4 w-4" />
+              </button>
+              <button className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
+                <Share className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      <div class="flex items-start gap-2">
-        <span class="text-sm text-gray-500">{trade.timestamp}</span>
-        <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            class="h-8 w-8"
-          >
-            <Pencil class="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            class="h-8 w-8"
-          >
-            <ArrowUpRight class="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  </Card>
-);
+    );
+  };
+
+export default TradeCard;
