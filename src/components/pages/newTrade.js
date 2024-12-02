@@ -117,6 +117,8 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
 
     useEffect(() => {
         if (isOpen) {
+            setCurrentFocus('type'); // Ensure currentFocus is set to 'type' when modal opens
+
             inputRefs.type.current?.focus();
         }
     }, [isOpen]);
@@ -135,6 +137,8 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
     }, [stockSearch]);
     useEffect(() => {
         switch (currentFocus) {
+            case 'Buy':
+            case 'Sell':
             case 'type':
                 inputRefs.type.current?.focus();
                 break;
@@ -248,6 +252,8 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
         }
 
         switch (currentFocus) {
+            case 'Buy':
+            case 'Sell':
             case 'type':
                 switch (e.key) {
                     case 'Enter':
@@ -507,6 +513,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                             class={` p-3 font-medium ${type === 'Buy' ? 'text-green-600' : 'text-red-600'} cursor-pointer`}
                             ref={inputRefs.type}
                             tabIndex={0}
+                            value={type}
                             onKeyDown={handleKeyDown}
                             onFocus={handleFocus}
                             onClick={() => setType(prev => prev === 'Buy' ? 'Sell' : 'Buy')}

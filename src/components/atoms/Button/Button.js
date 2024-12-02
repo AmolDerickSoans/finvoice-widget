@@ -19,7 +19,7 @@ const Button = ({
       progress: "bg-green-600",
       text: "text-white"
     },
-    sell: {
+    Sell: {
       enabled: "bg-red-600 hover:bg-red-600",
       progress: "bg-red-600",
       text: "text-white"
@@ -35,9 +35,9 @@ const Button = ({
 
   return (
     <div class={`relative w-full rounded-md overflow-hidden px-4 py-2 
-                 ${type === 'sell' ? 'bg-red-100 focus:ring-red-500' : 
-                   type === 'reset' ? 'bg-yellow-500 focus:ring-yellow-500' : 
-                   'bg-green-100 focus:ring-green-500'}`}>
+                 ${type === 'Sell' ? 'bg-red-100 focus:ring-red-800' : 
+                   type === 'reset' ? 'bg-yellow-500 focus:ring-yellow-800' : 
+                   'bg-green-100 focus:ring-green-800'}`}>
       {/* Progress bar */}
       <div
         class={`absolute left-0 top-0 h-full transition-all duration-300 ease-out ${currentStyle.progress}`}
@@ -58,7 +58,7 @@ const Button = ({
           ${isEnabled ? currentStyle.enabled : 'cursor-not-allowed'}
           ${currentStyle.text}
           focus:outline-none focus:ring-2 focus:ring-offset-1
-          ${type === 'buy' ? 'focus:ring-green-800' : type === 'sell' ? 'focus:ring-red-800' : 'focus:ring-gray-800'}
+          ${type === 'buy' ? 'focus:ring-green-800' : type === 'Sell' ? 'focus:ring-red-800' : 'focus:ring-gray-800'}
         `}
       >
         {children || 'Copy'}
