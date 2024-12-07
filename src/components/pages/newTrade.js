@@ -523,7 +523,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                 <div class="bg-white rounded-lg shadow-lg max-w-md m-3 max-h-[90vh] overflow-y-auto modal-container">
                     <div class="px-6 pt-6 w-full">
                         {/* First row */}
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center justify-center flex-wrap gap-2">
                             <span
                                 class={`transition-all duration-100 ${isSearchExpanded
                                     ? 'w-0 p-0 m-0 overflow-hidden opacity-0'
@@ -554,7 +554,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 />
                             </div>
                             {/* Price inputs - hidden when search expanded */}
-                            <div class={`transition-all duration-300 flex items-center space-x-2 ${isSearchExpanded ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'
+                            <div class={`transition-all duration-300   justify-center flex-wrap gap-2 flex items-center ${isSearchExpanded ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'
                                 }`}>
                                 <span>at</span>
                                 <input
@@ -647,52 +647,57 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
 
                                 />
                             </div>
-                            <div class="px-6 pb-6 flex items-center justify-center space-x-2 flex-wrap">
-                                <span>Target for</span>
-                                <input
-                                    ref={inputRefs.target}
-                                    value={target}
-                                    onChange={(e) => setTarget(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="₹"
-                                    class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                                        }`}
-                                    type="number"
-                                    min="0"
-                                />
-                                {target2Visible && (
-                                    <>
-                                        <span>,</span>
-                                        <input
-                                            ref={inputRefs.target2}
-                                            value={target2}
-                                            onChange={(e) => setTarget2(e.target.value)}
-                                            onKeyDown={handleKeyDown}
-                                            placeholder="₹"
-                                            class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                                                }`}
-                                            type="number"
-                                            min="0"
-                                        />
-                                    </>
-                                )}
-                                {target3Visible && (
-                                    <>
-                                        <span>and</span>
-                                        <input
-                                            ref={inputRefs.target3}
-                                            value={target3}
-                                            onChange={(e) => setTarget3(e.target.value)}
-                                            onKeyDown={handleKeyDown}
-                                            placeholder="₹"
-                                            class={`w-16 px-1 py-2 mt-3 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                                                }`}
-                                            type="number"
-                                            min="0"
-                                        />
-                                    </>
-                                )}
-                            </div>
+                            <div class="px-6 pb-6">
+              <div class="flex items-center justify-center flex-wrap gap-2">
+                <span class="whitespace-nowrap">Target for</span>
+                <input
+                  ref={inputRefs.target}
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="₹"
+                  class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                  }`}
+                  type="number"
+                  min="0"
+                />
+                {target2Visible && (
+                  <div class="flex items-center gap-2">
+                    <span class="whitespace-nowrap">,</span>
+                    <input
+                      ref={inputRefs.target2}
+                      value={target2}
+                      onChange={(e) => setTarget2(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="₹"
+                      class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                        type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                      }`}
+                      type="number"
+                      min="0"
+                    />
+                  </div>
+                )}
+                {target3Visible && (
+                  <div class="flex items-center gap-2">
+                    <span class="whitespace-nowrap">and</span>
+                    <input
+                      ref={inputRefs.target3}
+                      value={target3}
+                      onChange={(e) => setTarget3(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="₹"
+                      class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                        type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                      }`}
+                      type="number"
+                      min="0"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
                         </Fragment>
                     )}
                 </div>
