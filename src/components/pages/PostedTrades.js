@@ -1,5 +1,6 @@
 import { h , Fragment} from 'preact';
 import { useState } from 'preact/hooks';
+import { useTrade } from '../../contexts/TradeContext.js';
 import { Send } from 'lucide-react';
 import TradeCard from '../molecules/TradeCard/TradeCard.js';
 import { trades } from '../../assets/data/data.js';
@@ -9,8 +10,8 @@ const PostedTrades = () => {
     const [activeTab, setActiveTab] = useState('active');
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const activeTrades = trades;
-    const countTrades = () => activeTrades.length;
+    const {activeTrades} = useTrade();
+    const countTrades = () => (activeTrades ? activeTrades.length : 0);
 
     const handleNewTradeClick = () => {
         setIsModalOpen(true);
