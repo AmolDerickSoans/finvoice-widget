@@ -527,8 +527,8 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                             <span
                                 class={`transition-all duration-100 ${isSearchExpanded
                                     ? 'w-0 p-0 m-0 overflow-hidden opacity-0'
-                                    : 'w-auto p-3 opacity-100'
-                                    } font-medium ${type === 'Buy' ? 'text-green-600' : 'text-red-600'
+                                    : 'w-auto p-3 opacity-100 focus:ring-2 rounded-lg'
+                                    } font-medium ${type === 'Buy' ? ' focus:ring-green-600 text-green-600' : ' focus:ring-red-600 text-red-600'
                                     } cursor-pointer`}
                                 ref={inputRefs.type}
                                 tabIndex={0}
@@ -554,7 +554,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 />
                             </div>
                             {/* Price inputs - hidden when search expanded */}
-                            <div class={`transition-all duration-300   justify-center flex-wrap gap-2 flex items-center ${isSearchExpanded ? 'w-0 overflow-hidden opacity-0' : 'w-auto opacity-100'
+                            <div class={`transition-all duration-300   justify-center flex-wrap gap-2 flex items-center ${isSearchExpanded ? 'w-0 overflow-hidden invisible h-0 opacity-0' : 'w-auto opacity-100 visible'
                                 }`}>
                                 <span>at</span>
                                 <input
