@@ -22,7 +22,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "dotenv-webpack": "^8.1.0",
-    "lucide-react": "^0.460.0",
+    "lucide-preact": "^0.468.0",
     "preact": "^10.24.3",
     "react": "npm:@preact/compat@^18.3.1",
     "react-dom": "npm:@preact/compat@^18.3.1",
