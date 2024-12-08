@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown } from 'lucide-preact';
 
 const KeyboardNavigationHint = () => {
   const [activeKey, setActiveKey] = useState(null);

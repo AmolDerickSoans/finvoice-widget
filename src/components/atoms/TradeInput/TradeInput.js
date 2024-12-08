@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import { useState, useRef } from 'preact/hooks';
-import { ArrowLeft, CornerDownLeft } from 'lucide-react';
+import { ArrowLeft, CornerDownLeft } from 'lucide-preact';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
