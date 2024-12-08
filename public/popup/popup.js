@@ -7,7 +7,7 @@ import '../../styles/tailwind.css'
 const App = () => {
   return (
     <TradeProvider>
-    <div class="flex flex-col min-w-screen ">
+    <div class="flex flex-col min-w-screen h-screen">
       <main class="flex-1 p-1 flex items-center justify-center">
        <PostedTrades/>
       </main>
