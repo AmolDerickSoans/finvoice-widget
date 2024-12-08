@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { h } from 'preact';
 import { useTrade } from '../../../contexts/TradeContext';
-import { Edit2, Share, ChevronRight } from 'lucide-react';
+import { Edit2, LogOut, ChevronRight } from 'lucide-preact';
 
 const TradeCard = ({ type, symbol, category, tradeType, date, time, trade, onEditClick }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -24,9 +24,9 @@ const TradeCard = ({ type, symbol, category, tradeType, date, time, trade, onEdi
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-2">
-              <span className={`px-2 py-1 rounded text-xs ${type === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              <span className={`px-2 py-1 rounded text-xs ${type === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                 }`}>
-                {type}
+                {type.toUpperCase()}
               </span>
               <h3 class="font-medium text-sm text-gray-900">{symbol}</h3>
             </div>
@@ -69,7 +69,7 @@ const TradeCard = ({ type, symbol, category, tradeType, date, time, trade, onEdi
             </button>
             <button className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
             >
-              <Share className="h-4 w-4" />
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>
