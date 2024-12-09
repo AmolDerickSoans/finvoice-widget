@@ -1,10 +1,8 @@
 import { h, Fragment } from 'preact';
 import { useState, useRef, useEffect, useMemo } from 'preact/hooks';
 import Button from '../atoms/Button/Button';
-import { useTrade } from '../../contexts/TradeContext.js';
-import StockSearchDropdown from '../molecules/SearchDropdown/SearchDropdown';
-import { mockStocks } from '../../assets/data/data.js';
-import { X } from 'lucide-react';
+import StockSearchDropdown from '../molecules/SearchDropdown/SearchDropdown'
+
 
 const style = `
 @keyframes slideDown {
@@ -66,9 +64,13 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
     //const [exactMatch , setExactMatch] = useState(false);
-    const { addTrade } = useTrade();
 
-    //const mockStocks = mockStocks
+    const mockStocks = [
+        { stockName: 'Reliance Industries Ltd', tickerSymbol: 'RELIANCE' },
+        { stockName: 'Relic Technologies Ltd', tickerSymbol: 'RELICTEC' },
+        { stockName: 'Reliance Infrastructure Ltd', tickerSymbol: 'RELINFRA' },
+        { stockName: 'Reliable Ventures India Ltd', tickerSymbol: 'RELIABVEN' },
+    ];
 
     const [filteredStocks, setFilteredStocks] = useState([]);
 
@@ -135,6 +137,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
             setFilteredStocks([]);
         }
     }, [stockSearch]);
+
     useEffect(() => {
         switch (currentFocus) {
             case 'Buy':
@@ -475,35 +478,20 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
 
 
     const handleSubmit = () => {
-        // Prepare trade data object
-        const tradeData = {
+        console.log('Form submitted with the following data:', {
             type,
-            stockName: selectedStock?.stockName || stockSearch,
-            tickerSymbol: selectedStock?.tickerSymbol || stockSearch,
-            price: {
-                main: parseFloat(price),
-                secondary: price2 ? parseFloat(price2) : null
-            },
-            stopLoss: parseFloat(stopLoss),
-            updatedAt: new Date().toISOString(),
-            targets: [
-                parseFloat(target),
-                target2 ? parseFloat(target2) : null,
-                target3 ? parseFloat(target3) : null
-            ].filter(Boolean)
-        };
+            stockSearch,
+            selectedStock,
+            price,
+            price2,
+            stopLoss,
+            target,
+            target2,
+            target3,
+        });
 
-        // Add trade using context
-        addTrade(tradeData);
-
-        // Copy to clipboard
         copyToClipboard(type, stockSearch, price, stopLoss, target, price2, target2, target3);
-        
-        // Reset form and close modal
-       // resetForm();
-       // onClose();
     };
-
 
     const copyToClipboard = (type, stockSearch, price, stoploss, target, price2 = '', target2 = '', target3 = '') => {
         const textToCopy = `${type} ${stockSearch} at ₹${price}${price2 ? ' and ₹' + price2 : ''}. Set Stoploss at ₹${stoploss}. Target for ₹${target}${target2 != '' ? ', ₹' + target2 : ''}${target3 != '' ? ' and ₹' + target3 : ''}.`;
@@ -538,7 +526,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                         <div class="flex items-center justify-center flex-wrap gap-2">
                             <span
                                 class={`transition-all duration-100 ${isSearchExpanded
-                                    ? 'w-0 p-0 m-0 overflow-hidden invisible h-0 opacity-0'
+                                    ? 'w-0 p-0 m-0 overflow-hidden opacity-0'
                                     : 'w-auto p-3 opacity-100 focus:ring-2 rounded-lg'
                                     } font-medium ${type === 'Buy' ? ' focus:ring-green-600 text-green-600' : ' focus:ring-red-600 text-red-600'
                                     } cursor-pointer`}

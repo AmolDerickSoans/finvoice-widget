@@ -10,7 +10,7 @@ const Button = ({
 }) => {
   const progress = totalFields > 0 ? (validFields / totalFields) * 100 : 0;
   //const isEnabled = progress === 100;
-  const isEnabled = (type === 'reset' || 'update' ? true : (progress === 100))
+  const isEnabled = (type === 'reset' || type === 'update' || progress === 100);
 
   // Button type styles
   const typeStyles = {

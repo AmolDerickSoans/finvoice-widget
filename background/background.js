@@ -11,25 +11,30 @@ const CACHE_CONFIG = {
   maxItems: 500 // Limit cache size
 };
 const supabase = createClient(
-  'YOUR_SUPABASE_URL',
-  'YOUR_SUPABASE_ANON_KEY'
+
+  
 )
 // Initialize extension
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('Trade Call Widget installed/updated');
-  await initializeCache();
-  await cacheAllStockSymbols(); // Cache stock symbols on installation
-  await checkAuth();
+  //await initializeCache();
+  //await cacheAllStockSymbols(); // Cache stock symbols on installation
+  //await checkAuth();
+  await chrome.sidePanel.setOptions({
+    enabled: true,
+    path: 'popup.html'
+  });
 });
 
 // Check auth state when extension opens
 chrome.runtime.onStartup.addListener(async() => {
- await checkAuth();
+//  await checkAuth();
+ console.log('on startup checked auth')
 });
 
 async function checkAuth() {
   const { data: { session }, error } = await supabase.auth.getSession();
-  
+  console.log('checking auth')
   if (error || !session) {
     // If not authenticated, open auth popup
     chrome.windows.create({
@@ -69,21 +74,13 @@ async function cacheAllStockSymbols() {
 
 // Listen for extension icon clicks
 chrome.action.onClicked.addListener(async (tab) => {
-  // Open the side panel in the current window
-  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error) => console.error(error));
-});
-
-
-chrome.sidePanel
-          .setPanelBehavior({ openPanelOnActionClick: true })
-          .catch((error) => console.error(error));
-// Initialize side panel options when extension is installed or updated
-chrome.runtime.onInstalled.addListener(async () => {
-  await chrome.sidePanel.setOptions({
-    enabled: true,
-    path: 'popup.html'
-  });
+  console.log('Extension icon clicked'); // Log when the icon is clicked
+  try {
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+    console.log('Side panel behavior set successfully');
+  } catch (error) {
+    console.error('Error setting side panel behavior:', error);
+  }
 });
 
 // Handle messages from popup
