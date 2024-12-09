@@ -87,7 +87,8 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
 
 
     const totalFields = 4;
-    const validFields = [stockSearch, price, stopLoss, target].filter(Boolean).length;
+    //const validFields = [stockSearch, price, stopLoss, target].filter(Boolean).length;
+    const validFields = []
 
 
     const [isSearchAnimating, setIsSearchAnimating] = useState(false);

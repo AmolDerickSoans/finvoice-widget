@@ -1,9 +1,9 @@
 import { h, Fragment } from 'preact';
-import { useState, useRef, useEffect, useMemo } from 'preact/hooks';
+import { useState, useRef, useEffect, useMemo, useReducer } from 'preact/hooks';
 import Button from '../atoms/Button/Button';
 import StockSearchDropdown from '../molecules/SearchDropdown/SearchDropdown'
-
-
+import { useTrade } from '../../contexts/TradeContext.js';
+import { mockStocks } from '../../assets/data/data.js';
 const style = `
 @keyframes slideDown {
   0% { 
@@ -43,470 +43,563 @@ const style = `
 }
 `;
 
+// Navigation map factory for dynamic field navigation
+const createNavigationMap = ({
+  price2Visible,
+  target2Visible,
+  target3Visible,
+  handleFieldExpansion,
+  handleFieldCollapse,
+  validatePrices,
+  isSearchMode
+}) => ({
+  type: {
+    right: 'stockSearch',
+    down: 'stopLoss',
+    ariaLabel: 'Trade type selector',
+  },
+  stockSearch: {
+    left: 'type',
+    right: 'price',
+    down: 'stopLoss',
+    ariaLabel: 'Stock search',
+  },
+  price: {
+    left: 'stockSearch',
+    right: price2Visible ? 'price2' : 'stopLoss',
+    down: 'stopLoss',
+    enter: () => handleFieldExpansion('price2'),
+    ariaLabel: 'Price input',
+  },
+  price2: price2Visible
+    ? {
+        left: 'price',
+        right: 'stopLoss',
+        backspace: (value) => handleFieldCollapse('price2', value),
+        ariaLabel: 'Secondary price input',
+      }
+    : null,
+  stopLoss: {
+    left: price2Visible ? 'price2' : 'price',
+    right: 'target',
+    ariaLabel: 'Stop loss input',
+  },
+  target: {
+    left: 'stopLoss',
+    right: target2Visible ? 'target2' : 'copy',
+    up: 'stopLoss',
+    down: 'copy',
+    enter: () => handleFieldExpansion('target2'),
+    ariaLabel: 'Target price input'
+  },
+  target2: target2Visible ? {
+    left: 'target',
+    right: target3Visible ? 'target3' : 'copy',
+    up: 'target',
+    down: 'copy',
+    enter: () => handleFieldExpansion('target3'),
+    backspace: (value) => handleFieldCollapse('target2', value),
+    ariaLabel: 'Second target input'
+  } : null,
+  target3: target3Visible ? {
+    left: 'target2',
+    right: 'copy',
+    up: 'target2',
+    down: 'copy',
+    backspace: (value) => handleFieldCollapse('target3', value),
+    ariaLabel: 'Third target input'
+  } : null,
+  copy: {
+    left: target3Visible ? 'target3' : target2Visible ? 'target2' : 'target',
+    up: target3Visible ? 'target3' : target2Visible ? 'target2' : 'target',
+    ariaLabel: 'Copy trade details'
+  }
+});
 
 const NewTradeCallModal = ({ isOpen, onClose }) => {
-    // Keep existing state management
-    const [type, setType] = useState('Buy');
-    const [stockSearch, setStockSearch] = useState('');
-    const [selectedStock, setSelectedStock] = useState(null);
-    const [price, setPrice] = useState('');
-    const [price2Visible, setPrice2Visible] = useState(false);
-    const [price2, setPrice2] = useState('');
-    const [stopLoss, setStopLoss] = useState('');
-    const [target, setTarget] = useState('');
-    const [currentFocus, setCurrentFocus] = useState('type');
-    const [showStockSearch, setShowStockSearch] = useState(false);
-    const [selectedSearchIndex, setSelectedSearchIndex] = useState(-1);
-    const [target2Visible, setTarget2Visible] = useState(false);
-    const [target3Visible, setTarget3Visible] = useState(false);
-    const [target2, setTarget2] = useState('');
-    const [target3, setTarget3] = useState('');
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  // Trade context
+  const { addTrade } = useTrade();
+  // Form data state
+  const [type, setType] = useState('Buy');
+  const [formData, setFormData] = useState({
+    stock: '',
+    stockName: '',
+    price: '',
+    price2: '',
+    stopLoss: '',
+    target: '',
+    target2: '',
+    target3: ''
+  });
 
-    //const [exactMatch , setExactMatch] = useState(false);
+  // UI state
+  const [currentFocus, setCurrentFocus] = useState('type');
+  const [expandedFields, setExpandedFields] = useState({
+    price2: false,
+    target2: false,
+    target3: false
+  });
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [showStockSearch, setShowStockSearch] = useState(false);
+  const [selectedSearchIndex, setSelectedSearchIndex] = useState(-1);
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [filteredStocks, setFilteredStocks] = useState([]);
+  const [isSearchAnimating, setIsSearchAnimating] = useState(false);
 
-    const mockStocks = [
-        { stockName: 'Reliance Industries Ltd', tickerSymbol: 'RELIANCE' },
-        { stockName: 'Relic Technologies Ltd', tickerSymbol: 'RELICTEC' },
-        { stockName: 'Reliance Infrastructure Ltd', tickerSymbol: 'RELINFRA' },
-        { stockName: 'Reliable Ventures India Ltd', tickerSymbol: 'RELIABVEN' },
-    ];
+  // Refs for focus management
+  const inputRefs = {
+    type: useRef(null),
+    stockSearch: useRef(null),
+    price: useRef(null),
+    price2: useRef(null),
+    stopLoss: useRef(null),
+    target: useRef(null),
+    target2: useRef(null),
+    target3: useRef(null),
+    copy: useRef(null)
+  };
 
-    const [filteredStocks, setFilteredStocks] = useState([]);
-
-    const inputRefs = {
-        type: useRef(null),
-        stock: useRef(null),
-        price: useRef(null),
-        price2: useRef(null),
-        stopLoss: useRef(null),
-        target: useRef(null),
-        target2: useRef(null),
-        target3: useRef(null),
-        copyButton: useRef(null)
-    };
-
-
-
-    const totalFields = 4;
-    const validFields = [stockSearch, price, stopLoss, target].filter(Boolean).length;
-
-
-    const [isSearchAnimating, setIsSearchAnimating] = useState(false);
-    const [shouldRenderSearch, setShouldRenderSearch] = useState(false);
-
-    const previousSearchRef = useRef('');
-
-    useEffect(() => {
-        const styleSheet = document.createElement('style');
-        styleSheet.textContent = style;
-        document.head.appendChild(styleSheet);
-        return () => styleSheet.remove();
-    }, []);
-
-    // Handle search visibility animation
-    useEffect(() => {
-        if (showStockSearch) {
-            setShouldRenderSearch(true);
-            const timer = setTimeout(() => setIsSearchAnimating(true), 0);
-            return () => clearTimeout(timer);
-        } else {
-            setIsSearchAnimating(false);
-            const timer = setTimeout(() => setShouldRenderSearch(false), 150); // Match animation duration
-            return () => clearTimeout(timer);
-        }
-    }, [showStockSearch]);
-
-    useEffect(() => {
-        if (isOpen) {
-            setCurrentFocus('type'); // Ensure currentFocus is set to 'type' when modal opens
-
-            inputRefs.type.current?.focus();
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (stockSearch.length >= 3) {
-            const filtered = mockStocks.filter(stock =>
-                stock.stockName.toLowerCase().includes(stockSearch.toLowerCase()) ||
-                stock.tickerSymbol.toLowerCase().includes(stockSearch.toLowerCase())
-            );
-            setFilteredStocks(filtered);
-            setSelectedSearchIndex(-1);
-        } else {
-            setFilteredStocks([]);
-        }
-    }, [stockSearch]);
-
-    useEffect(() => {
-        switch (currentFocus) {
-            case 'Buy':
-            case 'Sell':
-            case 'type':
-                inputRefs.type.current?.focus();
-                break;
-            case 'stockSearch':
-                inputRefs.stock.current?.focus();
-                break;
-            case 'price':
-                inputRefs.price.current?.focus();
-                break;
-            case 'price2':
-                inputRefs.price2.current?.focus();
-                break;
-            case 'stopLoss':
-                inputRefs.stopLoss.current?.focus();
-                break;
-            case 'target':
-                inputRefs.target.current?.focus();
-                break;
-            case 'target2':
-                inputRefs.target2.current?.focus();
-                break;
-            case 'target3':
-                inputRefs.target3.current?.focus();
-                break;
-            case 'copy':
-                inputRefs.copyButton.current?.focus();
-                break;
-        }
-    }, [currentFocus]);
-
-
-    const matchingStock = useMemo(() => {
-        if (!stockSearch) return null;
-        const upperSearch = stockSearch.toUpperCase();
-        return mockStocks.find(stock =>
-            stock.tickerSymbol === upperSearch ||
-            stock.stockName.toUpperCase() === upperSearch
-        );
-    }, [stockSearch, mockStocks])
-
-
-    const filterStocks = useMemo(() => {
-        if (stockSearch.length < 3) return [];
-        const searchLower = stockSearch.toLowerCase();
-        return mockStocks.filter(stock =>
-            stock.stockName.toLowerCase().includes(searchLower) ||
-            stock.tickerSymbol.toLowerCase().includes(searchLower)
-        );
-    }, [stockSearch, mockStocks]);
-
-    const handleFocus = (e) => {
-        setCurrentFocus('stockSearch');
-        if (!stockSearch) {
-          setShowStockSearch(false);
-        } else if (stockSearch.length >= 0) {
-          setShowStockSearch(true);
-        }
-      };
-
-    // Handle collapsing the search on blur
-    const handleSearchBlur = () => {
-        setTimeout(() => {
-            setShowStockSearch(false);
-            setIsSearchExpanded(false);
-        }, 200);
-    };
-
-
-
-    const handleChange = (e) => {
-        setIsSearchExpanded(true);
-        const newValue = e.target.value.toUpperCase();
-        setStockSearch(newValue);
-        previousSearchRef.current = newValue;
-
-        if (newValue.length >= 0) {
-            setShowStockSearch(true);
-            setSelectedSearchIndex(-1);
-        } else {
-            setShowStockSearch(false);
-        }
-    };
-
-    // First, change the handleKeyDown function to:
-    const handleKeyDown = (e) => {
-        // Prevent default behavior for arrow keys to avoid unwanted scrolling
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            e.preventDefault();
-        }
-
-        // Helper function to check if a field should be hidden
-        const shouldHideField = (value) => !value || value.trim() === '';
-
-        if (showStockSearch && filteredStocks.length > 0) {
-            switch (e.key) {
-                case 'ArrowDown':
-                    setSelectedSearchIndex(prev =>
-                        prev < filteredStocks.length - 1 ? prev + 1 : 0
-                    );
-                    return;
-                case 'ArrowUp':
-                    setSelectedSearchIndex(prev =>
-                        prev > 0 ? prev - 1 : filteredStocks.length - 1
-                    );
-                    return;
-                case 'Enter':
-                    if (selectedSearchIndex >= 0) {
-                        const selected = filteredStocks[selectedSearchIndex];
-                        setSelectedStock(selected);
-                        setStockSearch(selected.tickerSymbol);
-                        setShowStockSearch(false);
-                        setCurrentFocus('price');
-                        return;
-                    }
-                    break;
-                case 'Escape':
-                    setShowStockSearch(false);
-                    inputRefs.stock.current?.blur();
-                    return;
-            }
-        }
-
-        switch (currentFocus) {
-            case 'Buy':
-            case 'Sell':
-            case 'type':
-                switch (e.key) {
-                    case 'Enter':
-                        setType(prev => prev === 'Buy' ? 'Sell' : 'Buy');
-                        break;
-                    case 'ArrowRight':
-                        setCurrentFocus('stockSearch');
-                        break;
-                    case 'ArrowDown':
-                        setCurrentFocus('stopLoss');
-                        break;
-                }
-                break;
-
-            case 'stockSearch':
-                if (!showStockSearch) {
-                    switch (e.key) {
-                        case 'ArrowLeft':
-                            setCurrentFocus('type');
-                            break;
-                        case 'ArrowRight':
-                            setCurrentFocus('price');
-                            break;
-                        case 'ArrowDown':
-                            setCurrentFocus('stopLoss');
-                            break;
-                    }
-                }
-                break;
-
-            case 'price':
-                switch (e.key) {
-                    case 'Enter':
-                        if (!price2Visible) {
-                            setPrice2Visible(true);
-                            setCurrentFocus('price2');
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        setCurrentFocus('stockSearch');
-                        break;
-                    case 'ArrowRight':
-                        setCurrentFocus(price2Visible ? 'price2' : 'stopLoss');
-                        break;
-                    case 'ArrowDown':
-                        setCurrentFocus('stopLoss');
-                        break;
-                }
-                break;
-
-            case 'price2':
-                switch (e.key) {
-                    case 'Backspace':
-                        if (!price2 || price2.trim() === '') {
-                            e.preventDefault();
-                            setPrice2Visible(false);
-                            setPrice2('');
-                            setCurrentFocus('price');
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        setCurrentFocus('price');
-                        break;
-                    case 'ArrowRight':
-                        setCurrentFocus('stopLoss');
-                        break;
-                    case 'ArrowDown':
-                        setCurrentFocus('stopLoss');
-                        break;
-                }
-                break;
-
-            case 'stopLoss':
-                switch (e.key) {
-                    case 'Enter':
-                    case 'ArrowDown':
-                        setCurrentFocus('target');
-                        break;
-                    case 'ArrowUp':
-                        setCurrentFocus('price');
-                        break;
-                    case 'ArrowLeft':
-                        setCurrentFocus('price');
-                        break;
-                    case 'ArrowRight':
-                        setCurrentFocus('target');
-                        break;
-                }
-                break;
-
-            case 'target':
-                switch (e.key) {
-                    case 'Enter':
-                        if (!target2Visible) {
-                            setTarget2Visible(true);
-                            setCurrentFocus('target2');
-                        }
-                        break;
-                    case 'ArrowRight':
-                        if (target2Visible) {
-                            setCurrentFocus('target2');
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        setCurrentFocus('stopLoss');
-                        break;
-                    case 'ArrowDown':
-                        if (validFields === totalFields) {
-                            setCurrentFocus('copy');
-                        }
-                        break;
-                    case 'ArrowUp':
-                        setCurrentFocus('stopLoss');
-                        break;
-                }
-                break;
-
-            case 'target2':
-                switch (e.key) {
-                    case 'Enter':
-                        if (!target3Visible) {
-                            setTarget3Visible(true);
-                            setCurrentFocus('target3');
-                        }
-                        break;
-                    case 'Backspace':
-                        if (!target2 || target2.trim() === '') {
-                            e.preventDefault();
-                            setTarget2Visible(false);
-                            setTarget2('');
-                            setCurrentFocus('target');
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        setCurrentFocus('target');
-                        break;
-                    case 'ArrowRight':
-                        if (target3Visible) {
-                            setCurrentFocus('target3');
-                        }
-                        break;
-                    case 'ArrowUp':
-                        setCurrentFocus('target');
-                        break;
-                    case 'ArrowDown':
-                        if (target3Visible) {
-                            setCurrentFocus('target3');
-                        } else if (validFields === totalFields) {
-                            setCurrentFocus('copy');
-                        }
-                        break;
-                }
-                break;
-
-            case 'target3':
-                switch (e.key) {
-                    case 'Backspace':
-                        if (!target3 || target3.trim() === '') {
-                            e.preventDefault();
-                            setTarget3Visible(false);
-                            setTarget3('');
-                            setCurrentFocus('target2');
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        setCurrentFocus('target2');
-                        break;
-                    case 'ArrowRight':
-                        if (validFields === totalFields) {
-                            setCurrentFocus('copy');
-                        }
-                        break;
-                    case 'ArrowUp':
-                        setCurrentFocus('target2');
-                        break;
-                    case 'ArrowDown':
-                        if (validFields === totalFields) {
-                            setCurrentFocus('copy');
-                        }
-                        break;
-                }
-                break;
-
-            case 'copy':
-                if (e.key === 'ArrowUp') {
-                    setCurrentFocus('target');
-                }
-                break;
-        }
-    };
-
-    const resetForm = () => {
-        setType('Buy');
-        setStockSearch('');
-        setSelectedStock(null);
-        setPrice('');
-        setStopLoss('');
-        setTarget('');
-        setCurrentFocus(null);
-        setShowStockSearch(false);
-        setSelectedSearchIndex(-1);
-        setPrice2('');
-        setPrice2Visible(false);
-        setTarget2('');
-        setTarget3('');
-        setTarget2Visible(false);
-        setTarget3Visible(false);
-    };
-
-
-    const handleSubmit = () => {
-        console.log('Form submitted with the following data:', {
-            type,
-            stockSearch,
-            selectedStock,
-            price,
-            price2,
-            stopLoss,
-            target,
-            target2,
-            target3,
-        });
-
-        copyToClipboard(type, stockSearch, price, stopLoss, target, price2, target2, target3);
-    };
-
-    const copyToClipboard = (type, stockSearch, price, stoploss, target, price2 = '', target2 = '', target3 = '') => {
-        const textToCopy = `${type} ${stockSearch} at ₹${price}${price2 ? ' and ₹' + price2 : ''}. Set Stoploss at ₹${stoploss}. Target for ₹${target}${target2 != '' ? ', ₹' + target2 : ''}${target3 != '' ? ' and ₹' + target3 : ''}.`;
-        console.log(textToCopy)
-        navigator.clipboard.writeText(textToCopy)
-            .then(() => {
-                console.log('Text copied to clipboard');
-            })
-            .catch(err => {
-                console.error('Failed to copy: ', err);
-            });
+  useEffect(() => {
+    if (!isOpen) return; // Ensure focus management only applies when modal is open
+    const ref = inputRefs[currentFocus]?.current;
+    if (ref) {
+      ref.focus();
     }
-        ;
+  }, [currentFocus, isOpen]);
 
-    if (!isOpen) return null;
+  // Add validation state
+  const [validFields, setValidFields] = useState({
+    stock: false,
+    price: false,
+    stopLoss: false,
+    target: false
+  });
+
+  // Helper function to check if a field is valid
+  const validateField = (field, value) => {
+    switch (field) {
+      case 'stock':
+        return value.length >= 2;
+      case 'price':
+        return parseFloat(value) > 0;
+      case 'stopLoss':
+        return parseFloat(value) > 0;
+      case 'target':
+        return parseFloat(value) > 0;
+      default:
+        return false;
+    }
+  };
+
+  // Update the handleInputChange function
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setValidFields(prev => ({
+      ...prev,
+      [field]: validateField(field, value)
+    }));
+    
+    // Handle collapsible fields
+    if ((field === 'price2' || field.startsWith('target')) && !value) {
+      const fieldName = field.replace(/\d+$/, '');
+      handleFieldCollapse(field, value);
+      setCurrentFocus(fieldName);
+    }
+  };
+  
+
+  const handleFieldExpansion = (field) => {
+    console.log('Expanding field:', field); // Add debugging
+    if (field === 'price2' && !validatePrices()) {
+      return; // Don't expand if validation fails
+    }
+    
+    setExpandedFields(prev => ({ ...prev, [field]: true }));
+    setCurrentFocus(field);
+  };
+  
+  const handleFieldCollapse = (field, value) => {
+    console.log('Collapsing field:', field, 'value:', value); // Add debugging
+    if (!value) {
+      setExpandedFields(prev => ({ ...prev, [field]: false }));
+      setFormData(prev => ({ ...prev, [field]: '' }));
+      
+      const previousFields = {
+        price2: 'price',
+        target2: 'target',
+        target3: 'target2'
+      };
+      setCurrentFocus(previousFields[field]);
+    }}
+
+  // Update handleStockSelect to set stock validation
+  const handleStockSelect = (stock) => {
+    setSelectedStock(stock);
+    setFormData(prev => ({
+      ...prev,
+      stock: stock.tickerSymbol,
+      stockName: stock.stockName
+    }));
+    setValidFields(prev => ({
+      ...prev,
+      stock: true
+    }));
+    setShowStockSearch(false);
+    setIsSearchExpanded(false);
+    setCurrentFocus('price');
+  };
+
+  // Calculate total valid fields
+  const totalValidFields = useMemo(() => 
+    Object.values(validFields).filter(Boolean).length,
+    [validFields]
+  );
+
+  // Update resetForm to reset all state
+  const resetForm = () => {
+    setType('Buy');
+    setFormData({
+      stock: '',
+      stockName: '',
+      price: '',
+      price2: '',
+      stopLoss: '',
+      target: '',
+      target2: '',
+      target3: ''
+    });
+    setSelectedStock(null);
+    setCurrentFocus('type');
+    setShowStockSearch(false);
+    setSelectedSearchIndex(-1);
+    setExpandedFields({
+      price2: false,
+      target2: false,
+      target3: false
+    });
+    setIsSearchExpanded(false);
+    setIsSearchMode(false);
+    setFilteredStocks([]);
+    setValidFields({
+      stock: false,
+      price: false,
+      stopLoss: false,
+      target: false
+    });
+  };
+
+  // Add style to document
+  useEffect(() => {
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = style;
+    document.head.appendChild(styleSheet);
+    return () => styleSheet.remove();
+  }, []);
+
+  useEffect(() => {
+    console.log('Focus changed to:', currentFocus); // Add debugging
+    const ref = inputRefs[currentFocus];
+    if (ref?.current) {
+      ref.current.focus();
+      // For type element, we need special handling
+      if (currentFocus === 'type') {
+        ref.current.classList.add('ring-2');
+      }
+    }
+  }, [currentFocus]);
+
+  // Validation functions
+  const validatePrices = () => {
+    if (!expandedFields.price2) return true;
+    const price1 = parseFloat(formData.price);
+    const price2 = parseFloat(formData.price2);
+    return !price2 || price2 > price1;
+  };
+
+  // Add new state near other state declarations
+  const [isSearchInteracting, setIsSearchInteracting] = useState(false);
+
+  // Replace existing handleSearchFocus
+  // const handleSearchFocus = () => {
+  //   // Log the current search state for debugging
+  //   console.log('Search focus:', { 
+  //     currentValue: formData.stock,
+  //     currentFocus,
+  //     isExpanded: isSearchExpanded 
+  //   });
+
+  //   // Always update focus to search when this field is interacted with
+  //   setCurrentFocus('stockSearch');
+
+  //   // Expand the search UI immediately
+  //   setIsSearchExpanded(true);
+
+  //   // Show stock search dropdown if we already have 3+ characters
+  //   if (formData.stock.length >= 3) {
+  //     setShowStockSearch(true);
+  //     // Pre-filter stocks when focusing with existing search
+  //     const filtered = mockStocks.filter(stock =>
+  //       stock.stockName.toLowerCase().includes(formData.stock.toLowerCase()) ||
+  //       stock.tickerSymbol.toLowerCase().includes(formData.stock.toLowerCase())
+  //     );
+  //     setFilteredStocks(filtered);
+  //   }
+  // };
+  const handleSearchFocus = () => {
+    setIsSearchAnimating(true);
+    setIsSearchExpanded(true);
+    setShowStockSearch(formData.stock.length >= 3);
+  };
+  
+  useEffect(() => {
+    if (formData.stock.length >= 3) {
+      const filtered = mockStocks.filter((stock) =>
+        stock.stockName.toLowerCase().includes(formData.stock.toLowerCase())
+      );
+      setFilteredStocks(filtered);
+      setShowStockSearch(true);
+    } else {
+      setFilteredStocks([]);
+      setShowStockSearch(false);
+    }
+  }, [formData.stock]);
+
+  // Replace existing handleSearchBlur
+  const handleSearchBlur = () => {
+    // Log the blur event and current interaction state
+    setIsSearchAnimating(false);
+    console.log('Search blur:', {
+      isSearchInteracting,
+      hasValue: formData.stock.length > 0,
+      showingResults: showStockSearch
+    });
+
+    // Use a timeout to allow click events on dropdown to complete
+    setTimeout(() => {
+      // Only collapse search if we're not interacting with dropdown
+      if (!isSearchInteracting) {
+        // If we have a valid stock selected, keep the compressed view
+        // Otherwise, reset to default state
+        if (validFields.stock) {
+          setIsSearchExpanded(false);
+          setShowStockSearch(false);
+        } else {
+          // Clear invalid search on blur
+          setFormData(prev => ({ ...prev, stock: '' }));
+          setIsSearchExpanded(false);
+          setShowStockSearch(false);
+          setFilteredStocks([]);
+        }
+      }
+    }, 150); // Reduced timeout for better responsiveness
+  };
+
+  // Add new handlers for dropdown interaction
+  const handleSearchMouseEnter = () => {
+    setIsSearchInteracting(true);
+  };
+
+  const handleSearchMouseLeave = () => {
+    setIsSearchInteracting(false);
+  };
+
+  const getNextField = (currentField, direction) => {
+    const nav = navigationMap[currentField];
+    if (!nav) return currentField;
+  
+    let nextField = nav[direction];
+    if (typeof nextField === 'function') {
+      nextField = nextField();
+    }
+  
+    // Validate visibility and existence
+    if (!nextField || !navigationMap[nextField]) return currentField;
+  
+    return nextField;
+  };
+
+  // Create navigation map
+  const navigationMap = useMemo(() => createNavigationMap({
+    price2Visible: expandedFields.price2,
+    target2Visible: expandedFields.target2,
+    target3Visible: expandedFields.target3,
+    handleFieldExpansion,
+    handleFieldCollapse,
+    validatePrices,
+    isSearchMode
+  }), [expandedFields, formData, isSearchMode]);
+
+  // Keyboard navigation handler
+// Update handleKeyDown
+// const handleKeyDown = (e) => {
+//   console.log('Key pressed:', e.key, 'Current focus:', currentFocus); // Add debugging
+
+//   // First handle search mode
+//   if (isSearchMode && showStockSearch) {
+//     switch (e.key) {
+//       case 'ArrowDown':
+//         e.preventDefault();
+//         setSelectedSearchIndex(prev => Math.min(prev + 1, filteredStocks.length - 1));
+//         return;
+//       case 'ArrowUp':
+//         e.preventDefault();
+//         setSelectedSearchIndex(prev => Math.max(prev - 1, 0));
+//         return;
+//       case 'Enter':
+//         if (selectedSearchIndex >= 0) {
+//           const selected = filteredStocks[selectedSearchIndex];
+//           handleStockSelect(selected);
+//           return;
+//         }
+//         break;
+//       case 'Escape':
+//         setIsSearchMode(false);
+//         setShowStockSearch(false);
+//         setIsSearchExpanded(false);
+//         return;
+//     }
+
+//       // Then handle regular navigation
+//   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+//     e.preventDefault();
+//     const direction = {
+//       ArrowUp: 'up',
+//       ArrowDown: 'down',
+//       ArrowLeft: 'left',
+//       ArrowRight: 'right'
+//     }[e.key];
+    
+//     const nextField = getNextField(currentFocus, direction);
+//     if (nextField && nextField !== currentFocus) {
+//       setCurrentFocus(nextField);
+//     }
+//   }
+
+//   // Handle other keys
+//   switch (e.key) {
+//     case 'Enter':
+//       handleEnterKey(e);
+//       break;
+//     case 'Backspace':
+//       handleBackspaceKey(e);
+//       break;
+//     case 'Escape':
+//       onClose();
+//       break;
+//   }
+//   }
+
+
+//     const currentFieldNav = navigationMap[currentFocus];
+//     if (!currentFieldNav) return;
+
+//     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+//       e.preventDefault();
+//     }
+
+//     switch (e.key) {
+//       case 'ArrowRight':
+//         if (currentFieldNav.right) setCurrentFocus(currentFieldNav.right);
+//         break;
+//       case 'ArrowLeft':
+//         if (currentFieldNav.left) setCurrentFocus(currentFieldNav.left);
+//         break;
+//       case 'ArrowUp':
+//         if (currentFieldNav.up) setCurrentFocus(currentFieldNav.up);
+//         break;
+//       case 'ArrowDown':
+//         if (currentFieldNav.down) setCurrentFocus(currentFieldNav.down);
+//         break;
+//       case 'Enter':
+//         if (currentFocus === 'type') {
+//           setType(prev => prev === 'Buy' ? 'Sell' : 'Buy');
+//         } else if (currentFieldNav.enter) {
+//           if (typeof currentFieldNav.enter === 'function') {
+//             currentFieldNav.enter();
+//           } else {
+//             setCurrentFocus(currentFieldNav.enter);
+//           }
+//         }
+//         break;
+//         case 'Backspace':
+//           if (!e.target.value && currentFieldNav.backspace) {
+//             currentFieldNav.backspace(e.target.value);
+//           }
+//           break;
+//       case 'Escape':
+//         onClose();
+//         break;
+//     }
+//   };
+const handleKeyDown = (e) => {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    e.preventDefault();
+    e.stopPropagation(); 
+    const direction = {
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
+    }[e.key];
+    const nextField = getNextField(currentFocus, direction);
+    if (nextField && nextField !== currentFocus) {
+      setCurrentFocus(nextField);
+    }
+  }
+};
+
+const handleInputKeyDown = (e, field) => {
+  e.stopPropagation(); // Prevent this from triggering parent handlers
+  if (e.key === 'Enter') {
+    if(field == 'type'){
+      setType(prev => prev === 'Buy' ? 'Sell' : 'Buy')
+    }
+    else{
+      handleFieldExpansion(field);
+    }
+  }
+};
+  // Copy to clipboard function
+  const handleCopy = () => {
+    const { stock, price, price2, stopLoss, target, target2, target3 } = formData;
+    const text = `${type} ${stock} at ₹${price}${price2 ? ' and ₹' + price2 : ''}. ` +
+                `Set Stoploss at ₹${stopLoss}. Target for ₹${target}` +
+                `${target2 ? ', ₹' + target2 : ''}${target3 ? ' and ₹' + target3 : ''}.`;
+    
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        addTrade({
+          type,
+          stockName: formData.stockName,
+          tickerSymbol: formData.stock,
+          price: {
+            main: parseFloat(price),
+            secondary: price2 ? parseFloat(price2) : null
+          },
+          stopLoss: parseFloat(stopLoss),
+          targets: [target, target2, target3].filter(Boolean).map(t => parseFloat(t))
+        });
+      })
+      .catch(console.error);
+  };
+
+  // Add filtering effect after other useEffects
+  useEffect(() => {
+    console.log('something')
+    if (formData.stock.length >= 3) {
+      const filtered = mockStocks.filter(stock =>
+        stock.stockName.toLowerCase().includes(formData.stock.toLowerCase()) ||
+        stock.tickerSymbol.toLowerCase().includes(formData.stock.toLowerCase())
+      );
+      setFilteredStocks(filtered);
+      setSelectedSearchIndex(-1);
+    } else {
+      setFilteredStocks([]);
+    }
+  }, [formData.stock]);
+
+  if (!isOpen) return null;
 
     return (
         <div
@@ -517,6 +610,8 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                     onClose();
                 }
             }}
+            onKeyDown={handleKeyDown}
+            onKeyUp={() => document.removeEventListener('keydown', handleKeyDown)}
         >
             <div class={`rounded-lg ${isSearchExpanded ? 'w-11/12 max-w-2xl' : 'max-w-md'
                 } m-3 max-h-[90vh] overflow-y-auto modal-container transition-all duration-200`}>
@@ -533,52 +628,47 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                                 ref={inputRefs.type}
                                 tabIndex={0}
                                 value={type}
-                                onKeyDown={handleKeyDown}
+                               // onKeyDown={handleKeyDown}
+                               onKeyDown={handleInputKeyDown('type')}
                                 onClick={() => setType(prev => prev === 'Buy' ? 'Sell' : 'Buy')}
                             >
                                 {type === 'Buy' ? 'Buy' : 'Sell'}
                             </span>
-                            <div class={`relative transition-all duration-300 ease-in-out ${isSearchExpanded ? 'w-full' : 'w-auto'
-                                }`}>
+                            <div class={`relative transition-all duration-300 ease-in-out ${isSearchExpanded ? 'w-full' : 'w-auto'}`}>
                                 <input
-                                    ref={inputRefs.stock}
-                                    value={stockSearch}
-                                    onChange={handleChange}
-                                    onFocus={handleFocus}
+                                    ref={inputRefs.stockSearch}
+                                    value={formData.stock}
+                                    onChange={(e) => handleInputChange('stock', e.target.value)}
+                                    onFocus={handleSearchFocus}
                                     onBlur={handleSearchBlur}
-                                    onKeyDown={handleKeyDown}
+                                  //  onKeyDown={handleKeyDown}
                                     placeholder="Search stocks..."
-                                    class={`transition-all duration-300 ease-in-out ${isSearchExpanded ? 'w-full' : 'w-48'
-                                        } px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                                        } overflow-hidden whitespace-nowrap text-ellipsis`}
+                                    class={`transition-all duration-300 ease-in-out ${isSearchExpanded ? 'w-full' : 'w-48'} px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'} overflow-hidden whitespace-nowrap text-ellipsis`}
                                 />
                             </div>
                             {/* Price inputs - hidden when search expanded */}
-                            <div class={`transition-all duration-300   justify-center flex-wrap gap-2 flex items-center ${isSearchExpanded ? 'w-0 overflow-hidden invisible h-0 opacity-0' : 'w-auto opacity-100 visible'
-                                }`}>
+                            <div class={`transition-all duration-300 justify-center flex-wrap gap-2 flex items-center ${isSearchExpanded ? 'w-0 overflow-hidden invisible h-0 opacity-0' : 'w-auto opacity-100 visible'}`}>
                                 <span>at</span>
                                 <input
                                     ref={inputRefs.price}
-                                    value={price}
-                                    onChange={(e) => setPrice(e.target.value)}
-                                    onKeyDown={handleKeyDown}
+                                    value={formData.price}
+                                    onChange={(e) => handleInputChange('price', e.target.value)}
+                                //    onKeyDown={handleKeyDown}
                                     placeholder="₹"
-                                    class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                                        }`}
+                                    class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
                                     type="number"
                                     min="0"
                                 />
-                                {price2Visible && (
+                                {expandedFields.price2 && (
                                     <>
                                         <span>to</span>
                                         <input
                                             ref={inputRefs.price2}
-                                            value={price2}
-                                            onChange={(e) => setPrice2(e.target.value)}
-                                            onKeyDown={handleKeyDown}
+                                            value={formData.price2}
+                                            onChange={(e) => handleInputChange('price2', e.target.value)}
+                                 //           onKeyDown={handleKeyDown}
                                             placeholder="₹"
-                                            class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                                                }`}
+                                            class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
                                             type="number"
                                             min="0"
                                         />
@@ -589,130 +679,101 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
                     </div>
                     {/* Search Results - Show when search is active */}
                     {showStockSearch ? (
-                        // <div class={`mt-2 origin-top ${isSearchAnimating ? 'search-enter' : 'search-exit'}`}>
-                        //     <div class="text-sm text-gray-500 p-2 bg-gray-50 border-b">
-                        //         Type 3 letters to filter the list...
-                        //     </div>
-                        //     <div class="max-h-[40vh] overflow-y-auto">
-                        //         {filteredStocks.map((stock, index) => (
-                        //             <div
-                        //                 key={stock.tickerSymbol}
-                        //                 class={`p-3 cursor-pointer border-b ${selectedSearchIndex === index ? 'bg-gray-100' : 'hover:bg-gray-50'
-                        //                     }`}
-                        //                 onClick={() => {
-                        //                     setSelectedStock(stock);
-                        //                     setStockSearch(stock.tickerSymbol.toUpperCase());
-                        //                     setShowStockSearch(false);
-                        //                     inputRefs.price.current?.focus();
-                        //                 }}
-                        //             >
-                        //                 <div class="font-medium">{stock.tickerSymbol}</div>
-                        //                 <div class="text-sm text-gray-500">XYZ</div>
-                        //             </div>
-                        //         ))}
-                        //     </div>
-                        //     <div class="text-sm text-white bg-gray-700 p-2">
-                        //         Press ↑ ↓ on keyboard to choose
-                        //     </div>
-                        // </div>
                         <StockSearchDropdown
-                        isSearchAnimating={isSearchAnimating}
-                        isFocused={currentFocus === 'stockSearch'}
-                        searchQuery={stockSearch}
-                        filteredStocks={filteredStocks}
-                        selectedSearchIndex={selectedSearchIndex}
-                        showStockSearch={showStockSearch}
-                        onStockSelect={(stock) => {
-                          setSelectedStock(stock);
-                          setStockSearch(stock.tickerSymbol.toUpperCase());
-                          setShowStockSearch(false);
-                            }}
-
+                            isSearchAnimating={isSearchAnimating}
+                            isFocused={currentFocus === 'stockSearch'}
+                            searchQuery={formData.stock}
+                            filteredStocks={filteredStocks}
+                            selectedSearchIndex={selectedSearchIndex}
+                            showStockSearch={showStockSearch}
+                            onStockSelect={handleStockSelect}
+                            onMouseEnter={handleSearchMouseEnter}
+                            onMouseLeave={handleSearchMouseLeave}
                             inputRefs={inputRefs}
                         />
                     ) : (
-                        <Fragment>
-                            <div class=" mt-4 px-6 pb-6 flex items-center justify-center space-x-2 flex-wrap">
-                                <span>Set stoploss at</span>
-                                <input
-                                    ref={inputRefs.stopLoss}
-                                    value={stopLoss}
-                                    onChange={(e) => setStopLoss(e.target.value)}
-                                    onFocus={() => setCurrentFocus('stopLoss')}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="₹"
-                                    class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
-                                    type="number"
-                                    min="0"
-
-                                />
-                            </div>
-                            <div class="px-6 pb-6">
-              <div class="flex items-center justify-center flex-wrap gap-2">
-                <span class="whitespace-nowrap">Target for</span>
-                <input
-                  ref={inputRefs.target}
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="₹"
-                  class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                  }`}
-                  type="number"
-                  min="0"
-                />
-                {target2Visible && (
-                  <div class="flex items-center gap-2">
-                    <span class="whitespace-nowrap">,</span>
-                    <input
-                      ref={inputRefs.target2}
-                      value={target2}
-                      onChange={(e) => setTarget2(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="₹"
-                      class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                        type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                      }`}
-                      type="number"
-                      min="0"
-                    />
-                  </div>
-                )}
-                {target3Visible && (
-                  <div class="flex items-center gap-2">
-                    <span class="whitespace-nowrap">and</span>
-                    <input
-                      ref={inputRefs.target3}
-                      value={target3}
-                      onChange={(e) => setTarget3(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="₹"
-                      class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                        type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
-                      }`}
-                      type="number"
-                      min="0"
-                    />
-                  </div>
-                )}
-              </div>
+                      <Fragment>
+                      <div class="mt-4 px-6 pb-6 flex items-center justify-center space-x-2 flex-wrap">
+                          <span>Set stoploss at</span>
+                          <input
+                              ref={inputRefs.stopLoss}
+                              value={formData.stopLoss}
+                              onChange={(e) => handleInputChange('stopLoss', e.target.value)}
+                       //       onKeyDown={handleKeyDown}
+                              placeholder="₹"
+                              class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                                type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                              }`}
+                              type="number"
+                              min="0"
+                          />
+                      </div>
+                      <div class="px-6 pb-6">
+        <div class="flex items-center justify-center flex-wrap gap-2">
+          <span class="whitespace-nowrap">Target for</span>
+          <input
+            ref={inputRefs.target}
+            value={formData.target}
+            onChange={(e) => handleInputChange('target', e.target.value)}
+          //  onKeyDown={handleKeyDown}
+            placeholder="₹"
+            class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+              type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+            }`}
+            type="number"
+            min="0"
+          />
+          {expandedFields.target2 && (
+            <div class="flex items-center gap-2">
+              <span class="whitespace-nowrap">,</span>
+              <input
+                ref={inputRefs.target2}
+                value={formData.target2}
+                onChange={(e) => handleInputChange('target2', e.target.value)}
+             //   onKeyDown={handleKeyDown}
+                placeholder="₹"
+                class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                  type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                }`}
+                type="number"
+                min="0"
+              />
             </div>
-                        </Fragment>
+          )}
+          {expandedFields.target3 && (
+            <div class="flex items-center gap-2">
+              <span class="whitespace-nowrap">and</span>
+              <input
+                ref={inputRefs.target3}
+                value={formData.target3}
+                onChange={(e) => handleInputChange('target3', e.target.value)}
+            //    onKeyDown={handleKeyDown}
+                placeholder="₹"
+                class={`w-16 px-1 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                  type === 'Sell' ? 'focus:ring-red-500' : 'focus:ring-green-500'
+                }`}
+                type="number"
+                min="0"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+                  </Fragment>
                     )}
                 </div>
 
-                <div class="w-full rounded-lg shadow-lg max-w-md  max-h-[90vh] overflow-y-auto modal-container px-3">
+                <div class="w-full rounded-lg shadow-lg max-w-md max-h-[90vh] overflow-y-auto modal-container px-3">
                     <Button
                         type={type}
-                        totalFields={totalFields}
-                        validFields={validFields}
-                        onClick={handleSubmit}
+                        totalFields={4}
+                        validFields={totalValidFields}
+                        onClick={handleCopy}
                     >
                         Copy
                     </Button>
 
-                    {validFields === totalFields && (
+                    {totalValidFields === 4 && (
                         <div class={`mt-2`}>
                             <Button
                                 type="reset"
@@ -729,3 +790,7 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
 };
 
 export default NewTradeCallModal;
+
+document.addEventListener('keydown', (e) => {
+  console.log('Event bubbling detected at:', e.target, 'with key:', e.key);
+});
