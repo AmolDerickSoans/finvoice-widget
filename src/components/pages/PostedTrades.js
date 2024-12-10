@@ -13,12 +13,7 @@ const PostedTrades = () => {
     const [selectedTrade, setSelectedTrade] = useState(null);
     
     // Use values from TradeContext
-    const { 
-        trades, 
-        activeTrades, 
-        completedTrades, 
-        updateTrade 
-    } = useTrade();
+    const { trades, activeTrades, completedTrades } = useTrade();
 
     // Count trades based on active tab
     const countTrades = () => {
@@ -37,16 +32,10 @@ const PostedTrades = () => {
         setIsUpdateModalOpen(true);
     };
 
-    const handleUpdateTrade = (updatedData) => {
-        if (selectedTrade && updatedData) {
-            updateTrade(selectedTrade.id, updatedData);
-            setIsUpdateModalOpen(false);
-            setSelectedTrade(null);
-        }
-    };
-
+  
     const displayTrades = activeTab === 'active' ? activeTrades : completedTrades;
-
+    const sortedTrades = displayTrades.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    
     return (
         <div class="w-full h-full max-w-md bg-gray-50 rounded-lg">
             <NewTradeCallModal
@@ -59,7 +48,6 @@ const PostedTrades = () => {
                     isOpen={isUpdateModalOpen}
                     onClose={() => setIsUpdateModalOpen(false)}
                     trade={selectedTrade}
-                    onUpdate={handleUpdateTrade}
                 />
             )}
 
@@ -85,9 +73,8 @@ const PostedTrades = () => {
                             }`}
                         >
                             Active
-                            <span class="ml-2 px-2 py-0.5 text-xs bg-purple-600 text-white rounded-full">
-                                {countTrades()}
-                            </span>
+                            {/* add logic to show span in highlighted tab  */}
+                            {activeTab === 'active' && <span class="ml-2 px-2 py-0.5 text-xs bg-purple-600 text-white rounded-full">{countTrades()}</span>}
                         </button>
                         <button
                             onClick={() => setActiveTab('completed')}
@@ -98,6 +85,7 @@ const PostedTrades = () => {
                             }`}
                         >
                             Completed
+                            {activeTab === 'completed' && <span class="ml-2 px-2 py-0.5 text-xs bg-purple-600 text-white rounded-full">{countTrades()}</span>}
                         </button>
                     </div>
                 </div>
@@ -110,16 +98,14 @@ const PostedTrades = () => {
                         </div>
                     ) : (
                         <div>
-                            {displayTrades.map((trade) => (
+                            {sortedTrades.map((trade) => (
                                 <TradeCard
                                     key={trade.id}
                                     type={trade.type}
                                     trade={trade}
                                     symbol={trade.tickerSymbol}
                                     category={trade.stockName}
-                                    tradeType={`₹${trade.price.main}${
-                                        trade.price.secondary ? ` - ₹${trade.price.secondary}` : ''
-                                    }`}
+                                    tradeType={'EQUITY'}
                                     date={new Date(trade.updatedAt).toLocaleDateString()}
                                     time={new Date(trade.updatedAt).toLocaleTimeString()}
                                     onEditClick={handleEditClick}
