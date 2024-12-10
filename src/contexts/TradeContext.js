@@ -96,7 +96,7 @@ export function TradeProvider({ children }) {
           return {
             ...trade,
             ...updates,
-            status: TRADE_STATUS.UPDATED,
+            status: updates.status || trade.status,
             updatedAt: new Date().toISOString(),
             history: [
               ...trade.history,
