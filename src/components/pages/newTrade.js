@@ -82,30 +82,31 @@ const createNavigationMap = ({
   stopLoss: {
     left: price2Visible ? 'price2' : 'price',
     right: 'target',
+    down: 'target',
+    up: price2Visible ? 'price2' : 'price',
+    enter: 'target',
     ariaLabel: 'Stop loss input',
   },
   target: {
     left: 'stopLoss',
-    right: target2Visible ? 'target2' : 'copy',
+    right: target2Visible ? 'target2' : 'type',
     up: 'stopLoss',
-    down: 'copy',
+    
+    
     enter: () => handleFieldExpansion('target2'),
     ariaLabel: 'Target price input'
   },
   target2: target2Visible ? {
     left: 'target',
-    right: target3Visible ? 'target3' : 'copy',
+    right: target3Visible ? 'target3' : 'type',
     up: 'target',
-    down: 'copy',
     enter: () => handleFieldExpansion('target3'),
     backspace: (value) => handleFieldCollapse('target2', value),
     ariaLabel: 'Second target input'
   } : null,
   target3: target3Visible ? {
     left: 'target2',
-    right: 'copy',
     up: 'target2',
-    down: 'copy',
     backspace: (value) => handleFieldCollapse('target3', value),
     ariaLabel: 'Third target input'
   } : null,
@@ -319,51 +320,12 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
 
   // Add new state near other state declarations
   const [isSearchInteracting, setIsSearchInteracting] = useState(false);
-
-  // Replace existing handleSearchFocus
-  // const handleSearchFocus = () => {
-  //   // Log the current search state for debugging
-  //   console.log('Search focus:', { 
-  //     currentValue: formData.stock,
-  //     currentFocus,
-  //     isExpanded: isSearchExpanded 
-  //   });
-
-  //   // Always update focus to search when this field is interacted with
-  //   setCurrentFocus('stockSearch');
-
-  //   // Expand the search UI immediately
-  //   setIsSearchExpanded(true);
-
-  //   // Show stock search dropdown if we already have 3+ characters
-  //   if (formData.stock.length >= 3) {
-  //     setShowStockSearch(true);
-  //     // Pre-filter stocks when focusing with existing search
-  //     const filtered = mockStocks.filter(stock =>
-  //       stock.stockName.toLowerCase().includes(formData.stock.toLowerCase()) ||
-  //       stock.tickerSymbol.toLowerCase().includes(formData.stock.toLowerCase())
-  //     );
-  //     setFilteredStocks(filtered);
-  //   }
-  // };
-  const handleSearchFocus = () => {
-    setIsSearchAnimating(true);
-    setIsSearchExpanded(true);
-    setShowStockSearch(formData.stock.length >= 3);
-  };
-  
-  useEffect(() => {
-    if (formData.stock.length >= 3) {
-      const filtered = mockStocks.filter((stock) =>
-        stock.stockName.toLowerCase().includes(formData.stock.toLowerCase())
-      );
-      setFilteredStocks(filtered);
-      setShowStockSearch(true);
-    } else {
-      setFilteredStocks([]);
-      setShowStockSearch(false);
-    }
-  }, [formData.stock]);
+    const handleSearchFocus = () => {
+      setIsSearchAnimating(true);
+      setIsSearchExpanded(true);
+      //setShowDropdown
+      setShowStockSearch(true)
+    };
 
   // Replace existing handleSearchBlur
   const handleSearchBlur = () => {
@@ -430,108 +392,6 @@ const NewTradeCallModal = ({ isOpen, onClose }) => {
     isSearchMode
   }), [expandedFields, formData, isSearchMode]);
 
-  // Keyboard navigation handler
-// Update handleKeyDown
-// const handleKeyDown = (e) => {
-//   console.log('Key pressed:', e.key, 'Current focus:', currentFocus); // Add debugging
-
-//   // First handle search mode
-//   if (isSearchMode && showStockSearch) {
-//     switch (e.key) {
-//       case 'ArrowDown':
-//         e.preventDefault();
-//         setSelectedSearchIndex(prev => Math.min(prev + 1, filteredStocks.length - 1));
-//         return;
-//       case 'ArrowUp':
-//         e.preventDefault();
-//         setSelectedSearchIndex(prev => Math.max(prev - 1, 0));
-//         return;
-//       case 'Enter':
-//         if (selectedSearchIndex >= 0) {
-//           const selected = filteredStocks[selectedSearchIndex];
-//           handleStockSelect(selected);
-//           return;
-//         }
-//         break;
-//       case 'Escape':
-//         setIsSearchMode(false);
-//         setShowStockSearch(false);
-//         setIsSearchExpanded(false);
-//         return;
-//     }
-
-//       // Then handle regular navigation
-//   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-//     e.preventDefault();
-//     const direction = {
-//       ArrowUp: 'up',
-//       ArrowDown: 'down',
-//       ArrowLeft: 'left',
-//       ArrowRight: 'right'
-//     }[e.key];
-    
-//     const nextField = getNextField(currentFocus, direction);
-//     if (nextField && nextField !== currentFocus) {
-//       setCurrentFocus(nextField);
-//     }
-//   }
-
-//   // Handle other keys
-//   switch (e.key) {
-//     case 'Enter':
-//       handleEnterKey(e);
-//       break;
-//     case 'Backspace':
-//       handleBackspaceKey(e);
-//       break;
-//     case 'Escape':
-//       onClose();
-//       break;
-//   }
-//   }
-
-
-//     const currentFieldNav = navigationMap[currentFocus];
-//     if (!currentFieldNav) return;
-
-//     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-//       e.preventDefault();
-//     }
-
-//     switch (e.key) {
-//       case 'ArrowRight':
-//         if (currentFieldNav.right) setCurrentFocus(currentFieldNav.right);
-//         break;
-//       case 'ArrowLeft':
-//         if (currentFieldNav.left) setCurrentFocus(currentFieldNav.left);
-//         break;
-//       case 'ArrowUp':
-//         if (currentFieldNav.up) setCurrentFocus(currentFieldNav.up);
-//         break;
-//       case 'ArrowDown':
-//         if (currentFieldNav.down) setCurrentFocus(currentFieldNav.down);
-//         break;
-//       case 'Enter':
-//         if (currentFocus === 'type') {
-//           setType(prev => prev === 'Buy' ? 'Sell' : 'Buy');
-//         } else if (currentFieldNav.enter) {
-//           if (typeof currentFieldNav.enter === 'function') {
-//             currentFieldNav.enter();
-//           } else {
-//             setCurrentFocus(currentFieldNav.enter);
-//           }
-//         }
-//         break;
-//         case 'Backspace':
-//           if (!e.target.value && currentFieldNav.backspace) {
-//             currentFieldNav.backspace(e.target.value);
-//           }
-//           break;
-//       case 'Escape':
-//         onClose();
-//         break;
-//     }
-//   };
 const handleKeyDown = (e) => {
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
     e.preventDefault();
@@ -547,18 +407,24 @@ const handleKeyDown = (e) => {
       setCurrentFocus(nextField);
     }
   }
+  else if (e.type === 'click') { 
+    const clickedField = Object.keys(inputRefs).find(key => inputRefs[key].current === e.target);
+    if (clickedField) {
+        setCurrentFocus(clickedField);
+    }
+  }
 };
 
 const handleInputKeyDown = (e, field) => {
-  e.stopPropagation(); // Prevent this from triggering parent handlers
-  if (e.key === 'Enter') {
-    if(field == 'type'){
-      setType(prev => prev === 'Buy' ? 'Sell' : 'Buy')
-    }
-    else{
-      handleFieldExpansion(field);
-    }
-  }
+ // e.stopPropagation(); // Prevent this from triggering parent handlers
+  // if (e.key === 'Enter') {
+  //   if(field == 'type'){
+  //     setType(prev => prev === 'Buy' ? 'Sell' : 'Buy')
+  //   }
+  //   else{
+  //     handleFieldExpansion(field);
+  //   }
+  // }
 };
   // Copy to clipboard function
   const handleCopy = () => {
@@ -585,19 +451,22 @@ const handleInputKeyDown = (e, field) => {
   };
 
   // Add filtering effect after other useEffects
-  useEffect(() => {
-    console.log('something')
-    if (formData.stock.length >= 3) {
-      const filtered = mockStocks.filter(stock =>
-        stock.stockName.toLowerCase().includes(formData.stock.toLowerCase()) ||
-        stock.tickerSymbol.toLowerCase().includes(formData.stock.toLowerCase())
-      );
-      setFilteredStocks(filtered);
-      setSelectedSearchIndex(-1);
-    } else {
-      setFilteredStocks([]);
-    }
-  }, [formData.stock]);
+useEffect(() => {
+  if (formData.stock.length > 0) {
+    const filtered = mockStocks.filter(stock =>
+      stock.stockName.toLowerCase().includes(formData.stock.toLowerCase()) ||
+      stock.tickerSymbol.toLowerCase().includes(formData.stock.toLowerCase())
+    );
+    setFilteredStocks(filtered);
+   // setShowDropdown(true);
+   setShowStockSearch(true)
+   // setSearchIndex(-1); // Reset selection on new search
+  } else {
+    setFilteredStocks(mockStocks.slice(0, 10)); // Show first 10 stocks when empty
+    //setShowDropdown(true);
+    setShowStockSearch(true)
+  }
+}, [formData.stock]);
 
   if (!isOpen) return null;
 
@@ -610,11 +479,14 @@ const handleInputKeyDown = (e, field) => {
                     onClose();
                 }
             }}
-            onKeyDown={handleKeyDown}
-            onKeyUp={() => document.removeEventListener('keydown', handleKeyDown)}
+          
         >
             <div class={`rounded-lg ${isSearchExpanded ? 'w-11/12 max-w-2xl' : 'max-w-md'
-                } m-3 max-h-[90vh] overflow-y-auto modal-container transition-all duration-200`}>
+                } m-3 max-h-[90vh] overflow-y-auto modal-container transition-all duration-200`}
+                onKeyDown={handleKeyDown}
+                onClick={handleKeyDown}
+                onKeyUp={() => document.removeEventListener('keydown', handleKeyDown)}
+                >
                 <div class="bg-white rounded-lg shadow-lg max-w-md m-3 max-h-[90vh] overflow-y-auto modal-container">
                     <div class="px-6 pt-6 w-full">
                         {/* First row */}
