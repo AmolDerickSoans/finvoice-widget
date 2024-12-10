@@ -4,7 +4,8 @@ import { X } from 'lucide-preact';
 import Button from '../../atoms/Button/Button';
 import { useTrade } from '../../../contexts/TradeContext';
 
-const TradeUpdateForm = ({ trade, onClose, onUpdate }) => {
+const TradeUpdateForm = ({ trade, onClose }) => {
+  const { updateTrade } = useTrade(); // Get updateTrade from context
   const [activeField, setActiveField] = useState('stoploss');
   const [stoplossValue, setStoplossValue] = useState('');
   const [targetValue, setTargetValue] = useState('');
@@ -19,7 +20,6 @@ const TradeUpdateForm = ({ trade, onClose, onUpdate }) => {
   };
 
   useEffect(() => {
-    // Set initial focus to stoploss field
     inputRefs.stoploss.current?.focus();
   }, []);
 
@@ -33,72 +33,75 @@ const TradeUpdateForm = ({ trade, onClose, onUpdate }) => {
 
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-      e.preventDefault()
-      if (activeField === 'stoploss') {  
+      e.preventDefault();
+      if (activeField === 'stoploss') {
         setActiveField('target');
-
+        inputRefs.target.current.focus();
+        setStoplossValue(inputRefs.stoploss.current.value);
       }
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-      e.preventDefault()
+      e.preventDefault();
       if (activeField === 'target') {
         setActiveField('stoploss');
+        inputRefs.stoploss.current.focus();
+        setTargetValue(inputRefs.target.current.value);
       }
     }
-  };
-
-  const handleUpdate = () => {
-
-    if (!hasChanges()) {
-      console.log('No changes detected');
-      
-      return;
-    }
-
-    const updatedData = {
-      stopLoss: parseFloat(stoplossValue),
-      targets: [parseFloat(targetValue)]
-    };
-
-    const auditEntry = {
-      action: 'UPDATE',
-      timestamp: new Date().toISOString(),
-      changes: {
-        previous: {
-          stopLoss: trade.stopLoss,
-          targets: trade.targets
-        },
-        new: updatedData
-      }
-    };
-
-    console.log('Audit Trail:', auditEntry);
-    const message = copyToClipboard();
-    console.log('Update message:', message);
-    
-    onUpdate(updatedData);
-    setIsUpdated(true);
-  };
-
-  // Updated text color logic to consider both focus and value
-  const getTextColor = (field) => {
-    const isActive = activeField === field;
-    const hasValue = field === 'stoploss' ? Boolean(stoplossValue) : Boolean(targetValue);
-    
-    if (isActive || hasValue) {
-      return 'text-black';
-    }
-    return 'text-gray-300';
   };
 
   const hasChanges = () => {
-    // Check if either field has changed from original value
     const stoplossChanged = stoplossValue && stoplossValue !== originalStoploss;
     const targetChanged = targetValue && targetValue !== originalTarget;
     return stoplossChanged || targetChanged;
   };
 
+  const handleUpdate = () => {
+    if (!hasChanges()) {
+      console.log('No changes detected');
+      return;
+    }
+
+    // Prepare update data
+    const updates = {};
+    const metadata = {
+      updateType: [],
+      reason: 'Manual price adjustment'
+    };
+
+    if (stoplossValue && stoplossValue !== originalStoploss) {
+      updates.stopLoss = parseFloat(stoplossValue);
+      metadata.updateType.push('STOPLOSS_UPDATED');
+    }
+
+    if (targetValue && targetValue !== originalTarget) {
+      updates.targets = [parseFloat(targetValue)];
+      metadata.updateType.push('TARGET_UPDATED');
+    }
+
+    // Call context updateTrade with audit metadata
+    updateTrade(trade.id, updates, metadata);
+
+    // Create and copy update message
+    const message = copyToClipboard();
+    console.log('Update message:', message);
+    
+    setIsUpdated(true);
+    setTimeout(() => {
+      onClose();
+    }, 1000);
+  };
+
+  const getTextColor = (field) => {
+    const isActive = activeField === field;
+    const hasValue = field === 'stoploss' ? Boolean(stoplossValue) : Boolean(targetValue);
+    return isActive || hasValue ? 'text-black' : 'text-gray-300';
+  };
 
   const copyToClipboard = () => {
+    if (!hasChanges() || (!stoplossValue && !targetValue)) {
+      return;
+    }
+
     let message = `For ${trade.stockName}, modify:\n`;
     const parts = [];
   
@@ -115,16 +118,12 @@ const TradeUpdateForm = ({ trade, onClose, onUpdate }) => {
     }
   
     message += parts.join(', ') + '.';
-    // ... clipboard operations
+    
     navigator.clipboard.writeText(message)
-    .then(() => {
-      console.log('Text copied to clipboard:', message);
-    })
-    .catch(err => {
-      console.error('Failed to copy text:', err);
-    });
+      .then(() => console.log('Text copied to clipboard:', message))
+      .catch(err => console.error('Failed to copy text:', err));
 
-  return message;
+    return message;
   };
 
   return (
@@ -183,11 +182,11 @@ const TradeUpdateForm = ({ trade, onClose, onUpdate }) => {
       </div>
       <div className="mt-3 w-96">
         <Button
-          type="update"
+          type={isUpdated ? "success" : "update"}
           onClick={handleUpdate}
-
+          disabled={!hasChanges() || (!stoplossValue && !targetValue)}
         >
-          {isUpdated ? 'Updated' : 'Update'}
+          {isUpdated ? 'Updated!' : 'Update'}
         </Button>
       </div>
     </div>
