@@ -1,15 +1,16 @@
 import { h, Fragment } from 'preact';
 import { useState } from 'preact/hooks';
 import { useTrade } from '../../contexts/TradeContext.js';
+import { route } from 'preact-router'; 
 import { Send } from 'lucide-preact';
 import TradeCard from '../molecules/TradeCard/TradeCard.js';
 import NewTradeCallModal from '../pages/newTrade.js';
 import UpdateTradeModal from './UpdateTrade/UpdateTrade.js';
 
 const PostedTrades = () => {
+
+
     const [activeTab, setActiveTab] = useState('active');
-    const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
     const [selectedTrade, setSelectedTrade] = useState(null);
     
     // Use values from TradeContext
@@ -24,7 +25,7 @@ const PostedTrades = () => {
     };
 
     const handleNewTradeClick = () => {
-        setIsNewModalOpen(true);
+        route('/new-trade');
     };
 
     const handleEditClick = (trade) => {
@@ -38,18 +39,6 @@ const PostedTrades = () => {
     
     return (
         <div class="w-full h-full max-w-md bg-gray-50 rounded-lg">
-            <NewTradeCallModal
-                isOpen={isNewModalOpen}
-                onClose={() => setIsNewModalOpen(false)}
-            />
-            
-            {isUpdateModalOpen && (
-                <UpdateTradeModal
-                    isOpen={isUpdateModalOpen}
-                    onClose={() => setIsUpdateModalOpen(false)}
-                    trade={selectedTrade}
-                />
-            )}
 
             <div class="p-4">
                 <div class="flex justify-between items-center mb-4">

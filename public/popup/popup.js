@@ -1,18 +1,29 @@
 // popup/popup.js
 import { h, render } from 'preact';
-import  PostedTrades from '../../src/components/pages/PostedTrades.js'
+import { Router } from 'preact-router';
+import 'preact/devtools'
+import  PostedTrades from '../../src/components/pages/PostedTrades.js';
+import NewTradePage from '../../src/components/pages/newTrade';
+
 import { TradeProvider } from '../../src/contexts/TradeContext.js';
 // Add CSS imports
 import '../../styles/tailwind.css'
 const App = () => {
   return (
+  
     <TradeProvider>
+     
     <div class="flex flex-col min-w-screen h-screen">
       <main class="flex-1 p-1 flex items-center justify-center">
-       <PostedTrades/>
+      <Router>
+       <PostedTrades path="/"/>
+       {/* <PostedTrades path="/posted-trades" /> Added second path */}
+       <NewTradePage path="/new-trade" />
+       </Router>
       </main>
     </div>
     </TradeProvider>
+
   );
 };
 
