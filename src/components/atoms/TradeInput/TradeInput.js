@@ -9,17 +9,14 @@ const TradeInput = ({
   onMacroTrigger,
   className,
   type = "text",
+  value,
+  onChange,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [value, setValue] = useState("");
   const inputRef = useRef(null);
 
   const handleKeyDown = (e) => {
-    if (macro === "enter" && e.key === "Enter") {
-      e.preventDefault();
-      onMacroTrigger?.(value);
-    }
     if (macro === "backspace" && e.key === "Backspace" && !value) {
       e.preventDefault();
       onMacroTrigger?.(value);
@@ -27,8 +24,7 @@ const TradeInput = ({
   };
 
   const handleChange = (e) => {
-    setValue(e.target.value);
-    props.onChange?.(e);
+    onChange?.(e);
   };
 
   const showEnterIcon = macro === "enter" && isFocused;
