@@ -1,6 +1,7 @@
-import { h } from 'preact';
-import { useEffect, useState, useRef } from 'preact/hooks';
+import {h} from 'preact' 
+import { useState, useRef, useCallback, useMemo , useEffect } from 'preact/hooks';
 import { Search } from 'lucide-preact';
+import { debounce } from 'lodash';
 
 const StockSearch = ({ onSelect }) => {
   const [query, setQuery] = useState('');
@@ -9,123 +10,113 @@ const StockSearch = ({ onSelect }) => {
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef(null);
+  const cacheRef = useRef({
+    apiData: null,
+    lastFetch: null
+  });
 
+  // Cache duration - 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000;
 
-  const searchStocks = async (searchQuery) => {
+  // Memoized scoring function
+  const scoreResult = useMemo(() => (stock, searchQuery) => {
+    const ticker = stock.ticker.toLowerCase();
+    const name = stock.name.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
+    
+    // Early return for exact matches
+    if (ticker === query) return 100;
+    if (name === query) return 90;
+    
+    let score = 0;
+    
+    // Prioritize prefix matches
+    if (ticker.startsWith(query)) score += 80;
+    else if (name.startsWith(query)) score += 60;
+    
+    // Simple inclusion matches
+    if (ticker.includes(query)) score += 40;
+    if (name.includes(query)) score += 20;
+    
+    return score;
+  }, []);
+
+  // Memoized search function
+  const searchStocks = useCallback(async (searchQuery) => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setResults([]);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(`http://localhost:4000/stocks`);
-      const data = await response.json();
-      
-      // Convert search query to lowercase for case-insensitive matching
-      const query = searchQuery.toLowerCase().trim();
-      
-      if (!query) {
-        setResults([]);
-        return;
+      // Check cache validity
+      const now = Date.now();
+      if (!cacheRef.current.apiData || 
+          !cacheRef.current.lastFetch || 
+          now - cacheRef.current.lastFetch > CACHE_DURATION) {
+        const response = await fetch('http://localhost:4000/stocks');
+        const data = await response.json();
+        cacheRef.current = {
+          apiData: data,
+          lastFetch: now
+        };
       }
-  
-      // Score-based matching system
-      const scoredResults = data.map(stock => {
-        const ticker = stock.ticker.toLowerCase();
-        const name = stock.name.toLowerCase();
-        let score = 0;
-        
-        // Exact matches (highest priority)
-        if (ticker === query) score += 100;
-        if (name === query) score += 90;
-        
-        // Ticker-based matches
-        if (ticker.startsWith(query)) score += 80;
-        if (ticker.includes(query)) score += 70;
-        
-        // Name-based matches
-        if (name.startsWith(query)) score += 60;
-        if (name.includes(query)) score += 50;
-        
-        // Word boundary matches in name (e.g., "App" matching "Apple Inc")
-        const words = name.split(/\s+/);
-        if (words.some(word => word.startsWith(query))) score += 40;
-        
-        // Acronym matching (e.g., "ms" matching "Morgan Stanley")
-        const nameAcronym = words.map(word => word[0]).join('').toLowerCase();
-        if (nameAcronym.includes(query)) score += 30;
-        
-        // Fuzzy matching for typos (using Levenshtein distance)
-        const tickerDist = levenshteinDistance(ticker, query);
-        const nameDist = levenshteinDistance(name, query);
-        if (tickerDist <= 2) score += (20 - tickerDist * 5);
-        if (nameDist <= 2) score += (15 - nameDist * 5);
-  
-        return { ...stock, score };
-      });
-  
-      // Filter out results with no relevance and sort by score
-      const filteredResults = scoredResults
+
+      const data = cacheRef.current.apiData;
+      
+      // Score and filter results
+      const scoredResults = data
+        .map(stock => ({
+          ...stock,
+          score: scoreResult(stock, searchQuery)
+        }))
         .filter(result => result.score > 0)
         .sort((a, b) => b.score - a.score)
-        .slice(0,10);
-  
-      setResults(filteredResults);
+        .slice(0, 10);
+
+      setResults(scoredResults);
     } catch (err) {
       setError('Failed to fetch stocks');
     } finally {
       setLoading(false);
     }
-  };
-  
-  // Helper function to calculate Levenshtein distance for fuzzy matching
-  const levenshteinDistance = (str1, str2) => {
-    const track = Array(str2.length + 1).fill(null).map(() =>
-      Array(str1.length + 1).fill(null));
-    
-    for (let i = 0; i <= str1.length; i++) track[0][i] = i;
-    for (let j = 0; j <= str2.length; j++) track[j][0] = j;
-    
-    for (let j = 1; j <= str2.length; j++) {
-      for (let i = 1; i <= str1.length; i++) {
-        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
-        track[j][i] = Math.min(
-          track[j][i - 1] + 1, // deletion
-          track[j - 1][i] + 1, // insertion
-          track[j - 1][i - 1] + indicator // substitution
-        );
-      }
-    }
-    
-    return track[str2.length][str1.length];
-  };
+  }, [scoreResult]);
 
-  // Handle input change
+  // Debounced search with 300ms delay
+  const debouncedSearch = useMemo(
+    () => debounce(searchStocks, 300),
+    [searchStocks]
+  );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
   const handleInputChange = (e) => {
     const value = e.target.value;
     setQuery(value);
     if (value.length >= 2) {
-      searchStocks(value); // Call search function immediately
+      debouncedSearch(value);
     } else {
-      setResults([]); // Clear results if input is less than 2 characters
+      setResults([]);
     }
   };
 
-  const toggleDropdown = (e) => {
-    setIsOpen(e && e.target === inputRef.current);
-  };
-
-  const handleInputClick = () => {
-    setIsOpen(!isOpen);
-  };
-
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <div className="relative">
         <input
           ref={inputRef}
           type="text"
           value={query}
           onInput={handleInputChange}
-          onClick={handleInputClick}
+          onClick={() => setIsOpen(true)}
           className="w-full rounded-md border px-3 py-2 pr-10"
           placeholder="Search stocks..."
         />
@@ -133,7 +124,7 @@ const StockSearch = ({ onSelect }) => {
       </div>
       
       {isOpen && query.length >= 2 && (
-        <div className="z-50 absolute w-full mt-1 max-h-60 overflow-y-auto bg-white border rounded-md shadow-lg">
+        <div className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto bg-white border rounded-md shadow-lg">
           {loading ? (
             <div className="p-2 text-gray-500">Loading...</div>
           ) : error ? (
