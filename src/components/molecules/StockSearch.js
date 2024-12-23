@@ -65,7 +65,8 @@ const StockSearch = ({ onSelect }) => {
       // Filter out results with no relevance and sort by score
       const filteredResults = scoredResults
         .filter(result => result.score > 0)
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => b.score - a.score)
+        .slice(0,10);
   
       setResults(filteredResults);
     } catch (err) {
