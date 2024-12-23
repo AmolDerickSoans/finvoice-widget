@@ -7,6 +7,7 @@ import TradeInput from '../atoms/TradeInput/TradeInput';
 import TradeTypeToggle from '../molecules/TradeTypeToggle';
 import PreviewModal from '../organisms/PreviewModal';
 import { route } from 'preact-router';
+import StockSearch from '../molecules/StockSearch';
 
 const NewTradePage = () => {
   // Context
@@ -89,86 +90,46 @@ const NewTradePage = () => {
   };
 
   const handleFieldChange = (field, value) => {
-    if (field === 'stock') {
-      setSearchQuery(value);
-      handleStockSearch(value);
-    }
-    
     setFormData(prev => {
       const updated = { ...prev };
       
-      if (field === 'price') {
-        if (value.includes('-')) {
-          const [price, price2] = value.split('-').map(v => v.trim());
-          updated.price = price;
-          updated.price2 = price2 || '';
+      if (field === 'stock') {
+        setSearchQuery(value); // Update search query immediately
+        if (value.length >= 2) { // Ensure search only happens if length is 2 or more
         } else {
-          updated.price = value;
-          updated.price2 = '';
+          setSearchResults([]); // Clear results if input is less than 2 characters
+          setShowSearchResults(false); // Hide dropdown
         }
-      } else if (field === 'target') {
-        if (value.includes('-')) {
-          const [target1, ...rest] = value.split('-').map(v => v.trim());
-          updated.target = target1;
-          updated.target2 = rest[0] || '';
-          updated.target3 = rest[1] || '';
-        } else {
-          updated.target = value;
-          updated.target2 = '';
-          updated.target3 = '';
-        }
+        // DO NOT VALIDATE HERE
       } else {
-        updated[field] = value;
+        // Validate other fields immediately
+        const error = validateField(field, value);
+        setErrors(prev => ({ ...prev, [field]: error }));
       }
-      
-      // Validate the changed field
-      const error = validateField(field, value);
-      setErrors(prev => ({
-        ...prev,
-        [field]: error
-      }));
 
-      console.log('Validation Errors:', error);
-      
       return updated;
     });
   };
 
-
   // Search stock handling
-  const handleStockSearch = async (query) => {
-    setSearchQuery(query);
-    if (query.length < 2) {
-      setSearchResults([]);
-      setShowSearchResults(false);
-      return;
-    }
 
-    try {
-      // Mock API call - replace with actual API endpoint
-      const response = await fetch(`http://localhost:4000/stocks`);
-      const data = await response.json();
-      const filteredResults = data.filter( stock =>
-        stock.ticker.toLowerCase().includes(query.toLowerCase()) ||
-        stock.name.toLowerCase().includes(query.toLowerCase())
-      )
-      setSearchResults(filteredResults);
-      setShowSearchResults(true);
-    } catch (error) {
-      console.error('Stock search failed:', error);
-    }
-  };
 
   const handleStockSelect = (stock) => {
     setFormData(prev => ({
       ...prev,
       stock: stock.ticker,
-      stockName: stock.name
+      stockName: stock.name,
+      price: '',
+      stopLoss: '',
+      target: ''
     }));
     setSearchResults([]);
     setShowSearchResults(false);
     setSearchQuery(stock.name);
+    const error = validateField('stock', stock.ticker);
+    setErrors(prev => ({ ...prev, stock: error }));
   };
+
 
   // Preview handling
   const handlePreview = async () => {
@@ -245,32 +206,9 @@ const NewTradePage = () => {
               <label class="text-sm font-medium">
                 Stock <span class="text-red-500">*</span>
               </label>
-              <TradeInput
-                label="Stock"
-                value={searchQuery}
-                onChange={e => {
-                  const value = e.target.value;
-                  console.log('Stock:', value);
-                  handleFieldChange('stock', value);
-                }}
-                required
-                placeholder="Search stocks..."
-                error={errors.stock}
+              <StockSearch
+                onSelect={(stock) => handleStockSelect(stock)}
               />
-              {showSearchResults && searchResults.length > 0 && (
-                <div class="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                  {searchResults.map(stock => (
-                    <div
-                      key={stock.symbol}
-                      class="p-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handleStockSelect(stock)}
-                    >
-                      <div class="font-medium">{stock.symbol}</div>
-                      <div class="text-sm text-gray-600">{stock.name}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Price Section */}
