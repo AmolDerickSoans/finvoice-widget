@@ -1,11 +1,9 @@
-import { h, Fragment } from 'preact';
-import { useState } from 'preact/hooks';
+import { h } from 'preact';
+import { useState , useEffect } from 'preact/hooks';
 import { useTrade } from '../../contexts/TradeContext.js';
 import { route } from 'preact-router'; 
 import { Send } from 'lucide-preact';
 import TradeCard from '../molecules/TradeCard/TradeCard.js';
-import NewTradeCallModal from '../pages/newTrade.js';
-import UpdateTradeModal from './UpdateTrade/UpdateTrade.js';
 
 const PostedTrades = () => {
 
@@ -16,6 +14,7 @@ const PostedTrades = () => {
     // Use values from TradeContext
     const { trades, activeTrades, completedTrades } = useTrade();
 
+  
     // Count trades based on active tab
     const countTrades = () => {
         if (activeTab === 'active') {
@@ -28,10 +27,12 @@ const PostedTrades = () => {
         route('/new-trade');
     };
 
+
     const handleEditClick = (trade) => {
-        setSelectedTrade(trade);
-        setIsUpdateModalOpen(true);
-    };
+        console.log(trade , `/update-trade/${trade.id}`)
+        route(`/update-trade/${trade.id}`);
+      };
+
 
   
     const displayTrades = activeTab === 'active' ? activeTrades : completedTrades;
