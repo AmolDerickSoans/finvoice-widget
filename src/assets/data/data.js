@@ -145,5 +145,41 @@ const trades = [
     }
 ]
 
+const mockStocks = [
+    { stockName: 'Reliance Industries Ltd', tickerSymbol: 'RELIANCE' },
+    { stockName: 'HDFC Bank Ltd', tickerSymbol: 'HDFCBANK' },
+    { stockName: 'Hindustan Unilever Ltd', tickerSymbol: 'HUL' },
+    { stockName: 'Infosys Ltd', tickerSymbol: 'INFY' },
+    { stockName: 'ICICI Bank Ltd', tickerSymbol: 'ICICIBANK' },
+    { stockName: 'Kotak Mahindra Bank Ltd', tickerSymbol: 'KOTAKBANK' },
+    { stockName: 'Larsen & Toubro Ltd', tickerSymbol: 'LT' },
+    { stockName: 'Maruti Suzuki India Ltd', tickerSymbol: 'MARUTI' },
+    { stockName: 'Bajaj Finance Ltd', tickerSymbol: 'BAJFINANCE' },
+    { stockName: 'Bharat Petroleum Corporation Ltd', tickerSymbol: 'BPCL' },
+    { stockName: 'Tata Consultancy Services Ltd', tickerSymbol: 'TCS' },
+    { stockName: 'HCL Technologies Ltd', tickerSymbol: 'HCLTECH' },
+    { stockName: 'Axis Bank Ltd', tickerSymbol: 'AXISBANK' },
+    { stockName: 'Bharti Airtel Ltd', tickerSymbol: 'BHARTIARTL' },
+    { stockName: 'State Bank of India', tickerSymbol: 'SBIN' },
+    { stockName: 'Power Grid Corporation of India Ltd', tickerSymbol: 'POWERGRID' },
+    { stockName: 'NTPC Ltd', tickerSymbol: 'NTPC' },
+    { stockName: 'Tata Motors Ltd', tickerSymbol: 'TATAMOTORS' },
+    { stockName: 'ITC Ltd', tickerSymbol: 'ITC' },
+    { stockName: 'Hindalco Industries Ltd', tickerSymbol: 'HINDALCO' },
+    { stockName: 'Bharat Heavy Electricals Ltd', tickerSymbol: 'BHEL' },
+    { stockName: 'Coal India Ltd', tickerSymbol: 'COALINDIA' },
+    { stockName: 'Tata Steel Ltd', tickerSymbol: 'TATASTEEL' },
+    { stockName: 'JSW Steel Ltd', tickerSymbol: 'JSWSTEEL' },
+    { stockName: 'Hero MotoCorp Ltd', tickerSymbol: 'HEROMOTOCO' },
+    { stockName: 'Dr Reddy\'s Laboratories Ltd', tickerSymbol: 'DRREDDY' },
+    { stockName: 'Sun Pharmaceutical Industries Ltd', tickerSymbol: 'SUNPHARMA' },
+    { stockName: 'Titan Company Ltd', tickerSymbol: 'TITAN' },
+    { stockName: 'Adani Enterprises Ltd', tickerSymbol: 'ADANIENT' },
+    { stockName: 'Adani Ports and Special Economic Zone Ltd', tickerSymbol: 'ADANIPORTS' },
+    { stockName: 'Adani Green Energy Ltd', tickerSymbol: 'ADANIGREEN' },
+    { stockName: 'HDFC Life Insurance Company Ltd', tickerSymbol: 'HDFCLIFE' },
+    { stockName: 'HDFC Asset Management Company Ltd', tickerSymbol: 'HDFCAMC' }
+];
 
-export { trades }
+
+export { trades , mockStocks }
