@@ -3,7 +3,7 @@ import { h } from 'preact';
 import { useTrade } from '../../../contexts/TradeContext';
 import { Edit2, LogOut, ChevronRight } from 'lucide-preact';
 
-const TradeCard = ({ type, symbol, timePeriod, tradeType, date, time, trade, onEditClick }) => {
+const TradeCard = ({ type, symbol, timePeriod, tradeType, date, time, trade, onEditClick , onExitClick}) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleEditClick = (e) => {
@@ -12,6 +12,12 @@ const TradeCard = ({ type, symbol, timePeriod, tradeType, date, time, trade, onE
       onEditClick(trade);
     }
   };
+  const handleExitClick = (e) =>{
+    e.stopPropagation();
+    if(trade && onExitClick){
+      onExitClick(trade)
+    }
+  }
 
   return (
     <div
@@ -68,6 +74,7 @@ const TradeCard = ({ type, symbol, timePeriod, tradeType, date, time, trade, onE
               />
             </button>
             <button className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+            onClick={handleExitClick}
             >
               <LogOut className="h-4 w-4" />
             </button>

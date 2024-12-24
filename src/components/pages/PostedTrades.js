@@ -33,6 +33,9 @@ const PostedTrades = () => {
         route(`/update-trade/${trade.id}`);
       };
 
+    const handleExitClick = (trade) =>{
+        route(`/exit-trade/${trade.id}`)
+    }
 
   
     const displayTrades = activeTab === 'active' ? activeTrades : completedTrades;
@@ -99,6 +102,7 @@ const PostedTrades = () => {
                                     date={new Date(trade.updatedAt).toLocaleDateString()}
                                     time={new Date(trade.updatedAt).toLocaleTimeString()}
                                     onEditClick={handleEditClick}
+                                    onExitClick={handleExitClick}
                                 />
                             ))}
                         </div>

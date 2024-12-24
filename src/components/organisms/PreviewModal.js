@@ -1,7 +1,17 @@
 import {h} from 'preact';
 import { X } from 'lucide-preact';
 
-const PreviewModal = ({ isOpen, onClose, data, loading }) => {
+const SkeletonLoader = () => (
+  <div className="p-4">
+    <div className="bg-gray-200 h-4 w-1/2 rounded mb-2 animate-pulse" />
+    <div className="bg-gray-200 h-4 w-1/4 rounded mb-2 animate-pulse" />
+    <div className="bg-gray-200 h-4 w-3/4 rounded mb-2 animate-pulse" />
+    <div className="bg-gray-200 h-4 w-1/2 rounded mb-2 animate-pulse" />
+    <div className="bg-gray-200 h-4 w-2/3 rounded mb-2 animate-pulse" />
+  </div>
+);
+
+const PreviewModal = ({ isOpen, onClose, data, loading, llmResponse, setLlmResponse }) => {
   if (!isOpen) return null;
 
   return (
@@ -16,24 +26,17 @@ const PreviewModal = ({ isOpen, onClose, data, loading }) => {
         
         <div className="p-4 max-h-[70vh] overflow-y-auto">
           {loading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
-            </div>
+            <SkeletonLoader />
           ) : (
             <div className="prose max-w-none">
               {/* LLM response will be rendered here */}
-              <pre className="whitespace-pre-wrap">{JSON.stringify(data, null, 2)}</pre>
+              {llmResponse ? (
+                <pre className="whitespace-pre-wrap">{llmResponse}</pre>
+              ) : (
+                <pre className="whitespace-pre-wrap">{JSON.stringify(data, null, 2)}</pre>
+              )}
             </div>
           )}
-        </div>
-        
-        <div className="border-t p-4 flex justify-end">
-          <button 
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
