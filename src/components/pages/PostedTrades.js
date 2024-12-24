@@ -93,7 +93,7 @@ const PostedTrades = () => {
                                     type={trade.type}
                                     trade={trade}
                                     symbol={trade.tickerSymbol}
-                                    category={trade.stockName}
+                                    timePeriod={trade.timePeriod}
                                     tradeType={'EQUITY'}
                                     date={new Date(trade.updatedAt).toLocaleDateString()}
                                     time={new Date(trade.updatedAt).toLocaleTimeString()}
