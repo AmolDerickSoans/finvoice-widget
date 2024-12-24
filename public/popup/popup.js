@@ -8,6 +8,7 @@ import NewTradePage from '../../src/components/pages/newTrade';
 import { TradeProvider } from '../../src/contexts/TradeContext.js';
 // Add CSS imports
 import '../../styles/tailwind.css'
+import UpdateTrade from '../../src/components/pages/UpdateTrade/UpdateTrade.js';
 const App = () => {
   return (
   
@@ -18,6 +19,7 @@ const App = () => {
       <Router>
        <PostedTrades path="/"/>
        {/* <PostedTrades path="/posted-trades" /> Added second path */}
+       <UpdateTrade path="/update-trade/:id" />
        <NewTradePage path="/new-trade" />
        </Router>
       </main>
