@@ -1,5 +1,6 @@
-import { NseIndia } from 'stock-nse-india';
-const nseIndia = new NseIndia();
+//import { NseIndia } from 'stock-nse-india';
+import { createClient } from '@supabase/supabase-js'
+//const nseIndia = new NseIndia();
 // Constants
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
@@ -9,12 +10,49 @@ const CACHE_CONFIG = {
   version: '1.0',
   maxItems: 500 // Limit cache size
 };
+const supabase = createClient(
 
+  
+)
 // Initialize extension
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('Trade Call Widget installed/updated');
-  await initializeCache();
-  await cacheAllStockSymbols(); // Cache stock symbols on installation
+  //await initializeCache();
+  //await cacheAllStockSymbols(); // Cache stock symbols on installation
+  //await checkAuth();
+  await chrome.sidePanel.setOptions({
+    enabled: true,
+    path: 'popup.html'
+  });
+});
+
+// Check auth state when extension opens
+chrome.runtime.onStartup.addListener(async() => {
+//  await checkAuth();
+ console.log('on startup checked auth')
+});
+
+async function checkAuth() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  console.log('checking auth')
+  if (error || !session) {
+    // If not authenticated, open auth popup
+    chrome.windows.create({
+      url: 'auth.html',
+      type: 'popup',
+      width: 400,
+      height: 600
+    });
+  }
+}
+
+// Listen for messages from auth popup
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (message.type === 'AUTH_SUCCESS') {
+    // Close auth window and refresh main extension
+    chrome.windows.remove(sender.tab.windowId);
+    chrome.runtime.reload();
+  }
 });
 
 // Function to cache all stock symbols
@@ -33,6 +71,17 @@ async function cacheAllStockSymbols() {
     console.error('Failed to fetch and cache stock symbols:', error);
   }
 }
+
+// Listen for extension icon clicks
+chrome.action.onClicked.addListener(async (tab) => {
+  console.log('Extension icon clicked'); // Log when the icon is clicked
+  try {
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+    console.log('Side panel behavior set successfully');
+  } catch (error) {
+    console.error('Error setting side panel behavior:', error);
+  }
+});
 
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
