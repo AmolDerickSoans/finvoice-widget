@@ -35,12 +35,17 @@ const NewTradePage = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+
+  //logic state
+  const [wordCount, setWordCount] = useState(0);
+
+
   // Validation functions
   const validateField = (name, value) => {
     switch (name) {
       case 'stock':
         return !value ? 'Stock is required' : '';
-        
+
       case 'price':
         if (!value) return 'Entry price is required';
         if (value.includes('-')) {
@@ -51,25 +56,35 @@ const NewTradePage = () => {
           return 'Invalid price value';
         }
         return '';
-        
+
       case 'stopLoss':
         if (!value) return 'Stop loss is required';
         if (isNaN(parseFloat(value))) return 'Invalid stop loss value';
         return '';
-        
+
       case 'target':
         if (!value) return 'Target is required';
         if (value.includes('-')) {
           const targets = value.split('-').map(v => parseFloat(v.trim()));
           if (targets.some(isNaN)) return 'Invalid target values';
           for (let i = 1; i < targets.length; i++) {
-            if (targets[i] <= targets[i-1]) return 'Each target must be greater than the previous one';
+            if (targets[i] <= targets[i - 1]) return 'Each target must be greater than the previous one';
           }
         } else if (isNaN(parseFloat(value))) {
           return 'Invalid target value';
         }
         return '';
-        
+
+      case 'notes':
+        const words = value.trim().split(/\s+/);
+        const newWordCount = value.trim() === '' ? 0 : words.length;
+        setWordCount(newWordCount);
+        if (newWordCount > 550) {
+          return 'RA Notes cannot exceed 550 words';
+        }
+        return '';
+
+
       default:
         return '';
     }
@@ -81,7 +96,7 @@ const NewTradePage = () => {
       const error = validateField(field, formData[field]);
       if (error) newErrors[field] = error;
     });
-    
+
     // Log all validation errors
     console.log('Validation Errors:', newErrors);
 
@@ -91,11 +106,12 @@ const NewTradePage = () => {
 
   const handleFieldChange = (field, value) => {
     setFormData(prev => {
-      const updated = { ...prev };
-      
+      const updated = { ...prev, [field]: value };
+
       if (field === 'stock') {
         setSearchQuery(value); // Update search query immediately
         if (value.length >= 2) { // Ensure search only happens if length is 2 or more
+          // Trigger search logic here if needed
         } else {
           setSearchResults([]); // Clear results if input is less than 2 characters
           setShowSearchResults(false); // Hide dropdown
@@ -152,13 +168,11 @@ const NewTradePage = () => {
     // Prepare trade data
     const tradeData = {
       type: type.toUpperCase(),
-      stock: formData.stock,
+      tickerSymbol: formData.stock, // Use tickerSymbol for the stock symbol
       stockName: formData.stockName,
-      price: formData.price,
+      price: { main: formData.price }, // Store price as an object with 'main' property
       stopLoss: formData.stopLoss,
-      target: formData.target,
-      target2: formData.target2,
-      target3: formData.target3,
+      targets: [formData.target], // Store targets as an array
       timePeriod: formData.timePeriod,
       notes: formData.notes
     };
@@ -169,7 +183,6 @@ const NewTradePage = () => {
     // Navigate back
     route('/');
   };
-
   // Calculate form completion for button state
   const requiredFields = ['stock', 'price', 'stopLoss', 'target'];
   const validFields = requiredFields.filter(field =>
@@ -179,7 +192,7 @@ const NewTradePage = () => {
   return (
     <div class="min-h-screen bg-gray-50">
       {/* Header Bar */}
-      <header class="bg-white border-b">
+      <header class="bg-white border-b sticky top-0 z-10 shadow">
         <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 class="text-xl font-semibold text-gray-900">New Trade Call</h1>
           <button
@@ -213,7 +226,7 @@ const NewTradePage = () => {
 
             {/* Price Section */}
             <div class="">
-            <label class="text-sm font-medium">
+              <label class="text-sm font-medium">
                 Entry Price <span class="text-red-500">*</span>
               </label>
               <TradeInput
@@ -230,29 +243,29 @@ const NewTradePage = () => {
 
             {/* Stoploss */}
             <div>
-            <label class="text-sm font-medium">
-              Stop Loss <span class="text-red-500">*</span>
-            </label>
-            <TradeInput
-              label="Stoploss"
-              value={formData.stopLoss}
-              onChange={e => {
-                console.log('Stoploss:', e.target.value);
-                setFormData(prev => ({
-                  ...prev,
-                  stopLoss: e.target.value
-                }));
-              }}
-              required
-              type="number"
-              placeholder="₹"
-              error={errors.stopLoss}
-            />
+              <label class="text-sm font-medium">
+                Stop Loss <span class="text-red-500">*</span>
+              </label>
+              <TradeInput
+                label="Stoploss"
+                value={formData.stopLoss}
+                onChange={e => {
+                  console.log('Stoploss:', e.target.value);
+                  setFormData(prev => ({
+                    ...prev,
+                    stopLoss: e.target.value
+                  }));
+                }}
+                required
+                type="number"
+                placeholder="₹"
+                error={errors.stopLoss}
+              />
             </div>
 
             {/* Targets */}
             <div class="">
-            <label class="text-sm font-medium">
+              <label class="text-sm font-medium">
                 Target(s) <span class="text-red-500">*</span>
               </label>
               <TradeInput
@@ -288,26 +301,45 @@ const NewTradePage = () => {
               </select>
             </div>
 
-            {/* Notes */}
+            {/* notes */}
             <div >
               <label class="text-sm font-medium">RA notes</label>
               <textarea
                 value={formData.notes}
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  notes: e.target.value.replace(/<[^>]*>/g, '') // Basic XSS prevention
-                }))}
+                onInput={e => {
+                  const value = e.target.value;
+                  const words = value.trim().split(/\s+/);
+                  const newWordCount = value.trim() === '' ? 0 : words.length;
+
+                  if (newWordCount <= 550) {
+                    setFormData(prev => ({
+                      ...prev,
+                      notes: value.replace(/<[^>]*>/g, '') // Basic XSS prevention
+                    }));
+                    setWordCount(newWordCount);
+                    // Clear error if below limit
+                    setErrors(prev => ({ ...prev, notes: '' }));
+                  } else {
+                    // Set error if above limit
+                    setErrors(prev => ({ ...prev, notes: 'RA Notes cannot exceed 550 words' }));
+                  }
+                }}
                 placeholder="Enter a description..."
                 class="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[100px] resize-none"
               />
+              <div class="text-xs text-gray-500 flex justify-between">
+                <span>{wordCount}/550</span>
+                {errors.notes && <span class="text-red-500">{errors.notes}</span>}
+              </div>
             </div>
           </div>
+
 
           {/* Action Footer */}
           <div class="border-t p-6">
             <div class="max-w-md mx-auto relative">
-              {Object.keys(errors).length > 0 ? (
-                <div class="absolute right-full pr-2 top-1/2 -translate-y-1/2">
+              {validFields !== requiredFields.length && Object.keys(errors).length > 0 ? (
+                <div class="absolute right-full pr-1 top-1/3 -translate-y-1/2">
                   <div class="group relative">
                     <AlertCircle class="h-5 w-5 text-red-500" />
                     <div class="hidden group-hover:block absolute right-full top-1/2 -translate-y-1/2 w-48 p-2 bg-white border rounded-md shadow-lg mr-2">
@@ -324,7 +356,7 @@ const NewTradePage = () => {
               {validFields === requiredFields.length && (
                 <button
                   onClick={handlePreview}
-                  class="absolute right-full pr-2 top-1/2 -translate-y-1/2"
+                  class="absolute right-full pr-1 top-1/3 -translate-y-1/2"
                 >
                   <Eye class="h-5 w-5 text-gray-500" />
                 </button>
@@ -346,7 +378,7 @@ const NewTradePage = () => {
       </main>
 
       {/* Preview Modal would be implemented as a separate component */}
-      <PreviewModal 
+      <PreviewModal
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
         data={formData}
