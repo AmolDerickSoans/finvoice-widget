@@ -3,7 +3,7 @@ import { h } from 'preact';
 import { useTrade } from '../../../contexts/TradeContext';
 import { Edit2, LogOut, ChevronRight } from 'lucide-preact';
 
-const TradeCard = ({ type, symbol, timePeriod, tradeType, date, time, trade, onEditClick , onExitClick}) => {
+const TradeCard = ({ type, symbol, timePeriod, tradeType, date, time, trade, onEditClick , onExitClick , onDetailsClick}) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleEditClick = (e) => {
@@ -16,6 +16,13 @@ const TradeCard = ({ type, symbol, timePeriod, tradeType, date, time, trade, onE
     e.stopPropagation();
     if(trade && onExitClick){
       onExitClick(trade)
+    }
+  }
+
+  const handleDetailsClick = (e) =>{
+    e.stopPropagation();
+    if(trade && onDetailsClick){
+      onDetailsClick(trade)
     }
   }
 
@@ -51,7 +58,7 @@ const TradeCard = ({ type, symbol, timePeriod, tradeType, date, time, trade, onE
           </div>
 
           {/* Right Arrow */}
-          <div className="ml-2">
+          <div className="ml-2" onClick={handleDetailsClick}>
             <ChevronRight className="h-4 w-4 text-gray-400" />
           </div>
         </div>

@@ -37,6 +37,10 @@ const PostedTrades = () => {
         route(`/exit-trade/${trade.id}`)
     }
 
+    const handleDetailsClick = (trade) =>{
+        route(`/trade-history/${trade.id}`)
+    }
+
   
     const displayTrades = activeTab === 'active' ? activeTrades : completedTrades;
     const sortedTrades = displayTrades.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
@@ -103,6 +107,7 @@ const PostedTrades = () => {
                                     time={new Date(trade.updatedAt).toLocaleTimeString()}
                                     onEditClick={handleEditClick}
                                     onExitClick={handleExitClick}
+                                    onDetailsClick={handleDetailsClick}
                                 />
                             ))}
                         </div>
