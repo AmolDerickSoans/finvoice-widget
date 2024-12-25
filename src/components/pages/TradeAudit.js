@@ -1,94 +1,154 @@
-import {h} from 'preact' 
-import { useState} from 'preact/hooks';
-import { ChevronDown, ChevronRight, ArrowLeft } from 'lucide-preact';
-import { route } from 'preact-router';
-import { useTrade } from '../../contexts/TradeContext';
+import {h} from 'preact';
+import { ChevronDown, ChevronRight, ArrowLeft } from 'lucide-preact'
+import { route } from "preact-router"
+import { useState } from "preact/hooks"
+import { useTrade, ACTION_TYPES } from "../../contexts/TradeContext"
 
 const TradeAudit = ({ id }) => {
-  const { getTradeAuditTrail, getTrade } = useTrade();
-  const [expandedAction, setExpandedAction] = useState(null);
-  
-  const trade = getTrade(id);
+  const { getTradeAuditTrail, getTrade } = useTrade()
+  const [expandedAction, setExpandedAction] = useState(null)
+  const [activeTab, setActiveTab] = useState("Timeline")
+
+  const trade = getTrade(id)
   if (!trade) {
-    route('/');
-    return null;
+    route("/")
+    return null
   }
 
-  const auditTrail = getTradeAuditTrail(id);
-
-  const formatChange = (changes) => {
-    if (!changes) return '';
-    return Object.entries(changes)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(', ');
-  };
+  const auditTrail = getTradeAuditTrail(id)
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString();
-  };
+    return new Date(timestamp).toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: true,
+    })
+  }
+
+  const formatDate = (timestamp) => {
+    return new Date(timestamp).toLocaleString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
+  }
+
+  const getActionDetails = (record) => {
+    switch (record.action) {
+      case ACTION_TYPES.CREATED:
+        return `Initial trade created with price ₹${record.metadata.initialPrice}`
+      case ACTION_TYPES.PRICE_UPDATED:
+        return `Price updated to ₹${record.changes.price}`
+      case ACTION_TYPES.TARGET_UPDATED:
+        return `Targets updated to ₹${record.changes.targets.join(', ₹')}`
+      case ACTION_TYPES.STOPLOSS_UPDATED:
+        return `Stop loss updated to ₹${record.changes.stopLoss}`
+      case ACTION_TYPES.EXITED:
+        return `Trade exited at ₹${record.changes.exitPrice} (${record.changes.exitReason})`
+      default:
+        return record.action
+    }
+  }
+
+  const getTypeStyle = (type) => {
+    return type === 'BUY' 
+      ? 'bg-green-100 text-green-700'
+      : 'bg-red-100 text-red-700'
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b sticky top-0 z-10 shadow">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
-          <button onClick={() => route('/')} className="text-gray-600">
-            <ArrowLeft className="h-5 w-5" />
+    <div class="min-h-screen bg-white">
+      <header class="sticky top-0 z-10 bg-white border-b">
+        <div class="px-4 py-3">
+          <button onClick={() => route("/")} class="text-gray-600 mb-4 flex items-center gap-1">
+            <ArrowLeft class="h-4 w-4" />
+            <span>Back</span>
           </button>
-          <h1 className="text-xl font-semibold text-gray-900">Trade History</h1>
+          <div class="flex gap-2 items-center mb-4">
+            <span class={`px-2 py-1 text-xs rounded font-medium ${getTypeStyle(trade.type)}`}>
+              {trade.type}
+            </span>
+            <span class="font-medium">{trade.tickerSymbol}</span>
+            <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">EQUITY</span>
+            <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600 flex items-center gap-1">
+              <span class="text-xs">×</span>
+              {trade.timePeriod}
+            </span>
+          </div>
+          <div class="flex gap-6 border-b">
+            {["Timeline", "Prices"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                class={`pb-3 px-1 text-sm font-medium relative ${
+                  activeTab === tab ? "text-purple-600" : "text-gray-600"
+                }`}
+              >
+                {tab}
+                {activeTab === tab && (
+                  <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto p-4">
-        <div className="bg-white rounded-lg shadow">
-          {auditTrail?.map((record, index) => {
-            const isUpdate = record.action.includes('UPDATED');
-            const isExit = record.action === 'EXITED';
-            
-            if (!isUpdate && !isExit) return null;
-
-            return (
-              <div key={index} className="border-b last:border-b-0">
-                <button
-                  onClick={() => setExpandedAction(expandedAction === index ? null : index)}
-                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-3">
-                    {expandedAction === index ? 
-                      <ChevronDown className="h-4 w-4 text-gray-400" /> : 
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
-                    }
-                    <span className="font-medium">{record.action.replace('_', ' ')}</span>
-                    <span className="text-sm text-gray-500">
-                      {formatTime(record.timestamp)}
-                    </span>
-                  </div>
-                </button>
-
-                {expandedAction === index && (
-                  <div className="px-6 py-4 bg-gray-50 border-t">
-                    <div className="space-y-3 text-sm">
-                      {record.changes && (
-                        <div>
-                          <span className="font-medium text-gray-700">Changes: </span>
-                          <span className="text-gray-600">{formatChange(record.changes)}</span>
-                        </div>
-                      )}
-                      {record.metadata && (
-                        <div>
-                          <span className="font-medium text-gray-700">Additional Info: </span>
-                          <span className="text-gray-600">{formatChange(record.metadata)}</span>
-                        </div>
+      <div class="px-4">
+        {activeTab === "Timeline" && (
+          <div class="space-y-6 py-4">
+            {auditTrail?.map((record, index) => (
+              <div key={index} class="flex gap-4">
+                <div class="flex flex-col items-center">
+                  <div
+                    class={`w-2 h-2 rounded-full mt-2 ${
+                      expandedAction === index ? "bg-purple-600" : "bg-gray-300"
+                    }`}
+                  />
+                  {index !== auditTrail.length - 1 && (
+                    <div class="w-0.5 h-full bg-gray-200 mt-2" />
+                  )}
+                </div>
+                <div class="flex-1">
+                  <button
+                    onClick={() => setExpandedAction(expandedAction === index ? null : index)}
+                    class="w-full text-left"
+                  >
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-medium">{getActionDetails(record)}</span>
+                      {expandedAction === index ? (
+                        <ChevronDown class="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <ChevronRight class="h-4 w-4 text-gray-400" />
                       )}
                     </div>
-                  </div>
-                )}
+                    <div class="text-sm text-gray-500">
+                      {formatDate(record.timestamp)} {formatTime(record.timestamp)}
+                    </div>
+                  </button>
+
+                  {expandedAction === index && record.changes && (
+                    <div class="mt-2 text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+                      <pre class="whitespace-pre-wrap">
+                        {JSON.stringify(record.changes, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+        
+        {activeTab === "Prices" && (
+          <div class="py-4 text-center text-gray-500">
+            Price history visualization coming soon
+          </div>
+        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default TradeAudit;
+export default TradeAudit
