@@ -183,7 +183,7 @@ const NewTradePage = () => {
       stopLoss: formData.stopLoss,
       targets: [formData.target],
       timePeriod: formData.timePeriod,
-      notes: llmResponse // Use llmResponse for notes
+      notes: formData.notes // Use llmResponse for notes
     };
   };
 
