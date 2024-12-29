@@ -1,6 +1,7 @@
 // popup/popup.js
 import { h, render } from 'preact';
 import { Router } from 'preact-router';
+import { createHashHistory } from 'history';
 import 'preact/devtools'
 import  PostedTrades from '../../src/components/pages/PostedTrades.js';
 import NewTradePage from '../../src/components/pages/newTrade';
@@ -18,7 +19,8 @@ const App = () => {
      
     <div class="flex flex-col min-w-screen h-screen">
       <main class="flex-1 p-1 flex items-center justify-center">
-      <Router>
+      <Router
+      history={createHashHistory()} onError={(err) => console.error("Router Error:", err)}>
        <PostedTrades path="/"/>
        {/* <PostedTrades path="/posted-trades" /> Added second path */}
        <UpdateTrade path="/update-trade/:id" />
