@@ -6,6 +6,7 @@ import { useTrade } from '../../contexts/TradeContext';
 import TradeInput from '../atoms/TradeInput/TradeInput';
 import Button from '../atoms/Button/Button';
 import PreviewModal from '../organisms/PreviewModal';
+import useLLM from '../../hooks/useLLM';
 
 const ExitTrade = ({id}) => {
   const { getTrade, exitTrade } = useTrade();
@@ -23,11 +24,17 @@ const ExitTrade = ({id}) => {
   });
 
   const [errors, setErrors] = useState({});
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [llmResponse, setLlmResponse] = useState('');
-  const [submitLoading, setSubmitLoading] = useState(false);
   const [wordCount, setWordCount] = useState(0);
+
+  const { 
+    showPreview, 
+    setShowPreview,
+    previewLoading,
+    submitLoading, 
+    llmResponse,
+    handlePreview,
+    handleSubmit 
+  } = useLLM();
 
   const validateField = (name, value) => {
     switch (name) {
@@ -67,65 +74,34 @@ const ExitTrade = ({id}) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const mockLLMCallExit = (formData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const response = `
-Exit Trade Details:
-**Stock:** ${trade.tickerSymbol}
-**Name:** ${trade.stockName}
-**Type:** ${trade.type.toUpperCase()}
-**Entry Price:** ${trade.price.main}
-**Exit Price:** ${formData.exitPrice}
-**Time Period:** ${trade.timePeriod}
-**RA Notes:** ${formData.notes}
-`;
-        resolve(response);
-      }, 1500);
-    });
-  };
-
   const handleExitPreview = async () => {
-    setShowPreview(true);
-    setPreviewLoading(true);
-    try {
-      const response = await mockLLMCallExit(formData);
-      setLlmResponse(response);
-    } catch (error) {
-      console.error(error);
-      setLlmResponse('Error: ' + error.message);
-    } finally {
-      setPreviewLoading(false);
-    }
+    if (!validateForm()) return;
+    const tradeData = {
+      type: 'EXIT',
+      tickerSymbol: trade.tickerSymbol,
+      stockName: trade.stockName,
+      exitPrice: formData.exitPrice,
+      notes: formData.notes
+    };
+    await handlePreview(tradeData);
   };
 
-  const handleSubmit = async () => {
+  const handleFormSubmit = async () => {
     if (!validateForm()) return;
-    setSubmitLoading(true);
-
-    try {
-      const response = await mockLLMCallExit(formData);
+    const tradeData = {
+      type: 'EXIT',
+      tickerSymbol: trade.tickerSymbol,
+      stockName: trade.stockName,
+      exitPrice: formData.exitPrice,
+      notes: formData.notes
+    };
+    await handleSubmit(tradeData, () => {
       exitTrade(trade.id, {
         price: formData.exitPrice,
         reason: formData.notes
       });
-      copyToClipboard(response);
       route('/');
-    } catch (error) {
-      console.error('Error exiting trade:', error);
-    } finally {
-      setSubmitLoading(false);
-      setShowPreview(false);
-    }
-  };
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text)
-      .then(() => alert('Copied to clipboard!'))
-      .catch(err => {
-        console.error('Failed to copy:', err);
-        alert('Failed to copy to clipboard.');
-      });
+    });
   };
 
   const requiredFields = ['exitPrice'];
@@ -230,7 +206,7 @@ Exit Trade Details:
                 type={trade.type}
                 totalFields={requiredFields.length}
                 validFields={validFields}
-                onClick={handleSubmit}
+                onClick={handleFormSubmit}
                 loading={submitLoading}
               >
                 <div class="flex items-center justify-center gap-2">

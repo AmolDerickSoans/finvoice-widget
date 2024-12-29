@@ -87,9 +87,30 @@ const useLLM = () => {
     setSubmitLoading(true);
     try {
       const response = await generateLLMResponse(tradeData);
-      await copyToClipboard(response);
-      if (onSuccess) onSuccess(response);
-      return response;
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let result = '';
+
+      const readStream = async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            result += decoder.decode(value, { stream: true });
+          }
+          return result;
+        } catch (error) {
+          console.error("Error reading llmResponse:", error);
+          throw new Error("Error reading response.");
+        }
+      };
+
+      const finalResponse = await readStream();
+      await copyToClipboard(finalResponse);
+
+      if (onSuccess) onSuccess(finalResponse);
+      return finalResponse;
     } catch (error) {
       console.error('Error submitting trade:', error);
       throw error;
