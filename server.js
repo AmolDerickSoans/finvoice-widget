@@ -8,7 +8,7 @@ const config = require('./webpack.config.js');
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4200;
 
 // Modify webpack config for development server
 const webpackConfig = {
@@ -43,6 +43,10 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Development server running at http://localhost:${PORT}`);
+app.listen(PORT, (err) => {
+  if (err) {
+    console.error('Error starting server:', err);
+  } else {
+    console.log(`Server running at http://localhost:${PORT}`);
+  }
 });
