@@ -10,6 +10,7 @@ import { TradeProvider } from '../../src/contexts/TradeContext.js';
 import '../../styles/tailwind.css'
 import UpdateTrade from '../../src/components/pages/UpdateTrade/UpdateTrade.js';
 import ExitTrade from '../../src/components/pages/ExitTrade.js';
+import TradeAudit from '../../src/components/pages/TradeAudit.js';
 const App = () => {
   return (
   
@@ -22,6 +23,7 @@ const App = () => {
        {/* <PostedTrades path="/posted-trades" /> Added second path */}
        <UpdateTrade path="/update-trade/:id" />
        <ExitTrade path = "/exit-trade/:id" />
+       <TradeAudit path="/trade-history/:id" />
        <NewTradePage path="/new-trade" />
        </Router>
       </main>
