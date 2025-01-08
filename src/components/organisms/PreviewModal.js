@@ -2,6 +2,7 @@ import {h} from 'preact';
 import { useState, useEffect} from 'preact/hooks';
 import { X } from 'lucide-preact';
 import Markdown from 'preact-markdown';
+import useLLM from '../../hooks/useLLM';
 
 const SkeletonLoader = () => (
   <div className="p-4">
@@ -16,28 +17,9 @@ const SkeletonLoader = () => (
 const PreviewModal = ({ isOpen, onClose, data, loading, llmResponse, setLlmResponse }) => {
   if (!isOpen) return null;
   let [parsedResponse, setParsedResponse] = useState(null);
-
   useEffect(() => {
     if (llmResponse) {
-      const reader = llmResponse.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let result = '';
-
-      const readStream = async () => {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            result += decoder.decode(value, { stream: true });
-          }
-          setParsedResponse(result);
-        } catch (error) {
-          console.error("Error reading llmResponse:", error);
-          setParsedResponse("Error reading response.");
-        }
-      };
-
-      readStream();
+      setParsedResponse(llmResponse); // Update parsedResponse with llmResponse
     }
   }, [llmResponse]);
 
