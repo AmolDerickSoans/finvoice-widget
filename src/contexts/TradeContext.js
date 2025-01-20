@@ -20,10 +20,10 @@ export const ACTION_TYPES = {
 // Helper to safely parse stored data
 const getStoredTrades = () => {
   try {
-    const storedData = sessionStorage.getItem(STORAGE_KEY);
+    const storedData = localStorage.getItem(STORAGE_KEY);
     return storedData ? JSON.parse(storedData) : [];
   } catch (error) {
-    console.error('Error reading from sessionStorage:', error);
+    console.error('Error reading from localStorage:', error);
     return [];
   }
 };
@@ -31,9 +31,9 @@ const getStoredTrades = () => {
 // Helper to safely store data
 const storeTrades = (trades) => {
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
   } catch (error) {
-    console.error('Error writing to sessionStorage:', error);
+    console.error('Error writing to localStorage:', error);
   }
 };
 
@@ -47,10 +47,10 @@ const createHistoryRecord = (action, changes = null, metadata = {}) => ({
 const TradeContext = createContext(null);
 
 export function TradeProvider({ children }) {
-  // Initialize state from sessionStorage
+  // Initialize state from localStorage
   const [trades, setTrades] = useState(() => getStoredTrades());
 
-  // Update sessionStorage whenever trades change
+  // Update localStorage whenever trades change
   useEffect(() => {
     storeTrades(trades);
   }, [trades]);
@@ -147,7 +147,7 @@ export function TradeProvider({ children }) {
 
   const clearTrades = () => {
     setTrades([]);
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   // Helper functions
